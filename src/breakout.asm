@@ -38,6 +38,10 @@
     menu_opcion3 DB '           3. SALIR$'
     menu_prompt DB '           Selecciona: $'
     menu_pie DB 'PROYECTO BREAKOUT 8086 - CONTROLES A/D$'
+    ; Elementos decorativos del titulo arcade
+    marco_horizontal DB '+-------------------------------------------------------------+$'
+    marco_lateral DB '|$'
+    menu_subtitulo DB '*** THE CLASSIC ARCADE GAME ***$'
     
     ; Instrucciones
     inst_titulo DB '           INSTRUCCIONES$'
@@ -51,6 +55,11 @@
     msg_perdiste DB 'PERDISTE! Presiona ENTER para menu$'
     msg_ganaste DB 'GANASTE! Presiona ENTER para menu$'
     msg_puntos DB 'Puntos: $'
+    ; Mensajes de victoria y derrota
+    titulo_perdiste DB '*** PERDISTE ***$'
+    titulo_ganaste DB '*** GANASTE ***$'
+    msg_volver_menu DB 'Presiona ENTER para volver al menu$'
+    linea_final DB '========================================$'
     msg_controles DB 'A/D: MOVER  ESC: MENU$'
     
     juego_activo DB 1
@@ -172,33 +181,66 @@ NO_TECLA:
     
 FIN_JUEGO:
     CALL LIMPIAR_PANTALLA
-    
-    MOV DH, 10
+
+    ; Linea decorativa superior
+    MOV DH, 7
     MOV DL, 20
-    CALL MOVER_CURSOR
-    
+    LEA SI, linea_final
+    MOV CL, 40
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; Comprobar resultado del juego
     MOV AX, bloques_restantes
     CMP AX, 0
     JE MOSTRAR_GANASTE_MSG
-    
-    LEA DX, msg_perdiste
+
+    ; Mensaje de derrota - Rojo brillante
+    MOV DH, 10
+    MOV DL, 32
+    LEA SI, titulo_perdiste
+    MOV CL, 16
+    MOV BL, 0Ch
+    CALL IMPRIMIR_MENU_COLOR
+
     JMP MOSTRAR_MSG
-    
+
 MOSTRAR_GANASTE_MSG:
-    LEA DX, msg_ganaste
-    
+    ; Mensaje de victoria - Verde brillante
+    MOV DH, 10
+    MOV DL, 32
+    LEA SI, titulo_ganaste
+    MOV CL, 15
+    MOV BL, 0Ah
+    CALL IMPRIMIR_MENU_COLOR
+
 MOSTRAR_MSG:
-    MOV AH, 09h
-    INT 21h
-    
-    ; Mostrar puntos finales
-    MOV DH, 12
-    MOV DL, 25
+    ; Mostrar puntuacion final
+    MOV DH, 13
+    MOV DL, 30
     CALL MOVER_CURSOR
+
     LEA DX, msg_puntos
     MOV AH, 09h
     INT 21h
+
     CALL IMPRIMIR_NUMERO
+
+    ; Linea decorativa inferior
+    MOV DH, 15
+    MOV DL, 20
+    LEA SI, linea_final
+    MOV CL, 40
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; Instruccion para regresar
+    MOV DH, 18
+    MOV DL, 23
+    LEA SI, msg_volver_menu
+    MOV CL, 34
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
     
 ESPERAR_ENTER:
     MOV AH, 00h
@@ -237,65 +279,129 @@ MOSTRAR_CURSOR PROC
 MOSTRAR_CURSOR ENDP
 
 DIBUJAR_MENU PROC
+    PUSH BX
+    PUSH CX
     PUSH DX
-    
+    PUSH SI
+
+    ; ===================================
+    ; MARCO ARCADE - CELESTE
+    ; ===================================
+
+    ; Borde superior
+    MOV DH, 3
+    MOV DL, 8
+    LEA SI, marco_horizontal
+    MOV CL, 63
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; Borde inferior
+    MOV DH, 11
+    MOV DL, 8
+    LEA SI, marco_horizontal
+    MOV CL, 63
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; Bordes laterales
+    MOV DH, 4
+
+DIBUJAR_LADOS_MENU:
+    ; Lado izquierdo
+    MOV DL, 8
+    LEA SI, marco_lateral
+    MOV CL, 1
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; Lado derecho
+    MOV DL, 70
+    LEA SI, marco_lateral
+    MOV CL, 1
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+
+    INC DH
+    CMP DH, 11
+    JB DIBUJAR_LADOS_MENU
+
+    ; ===================================
+    ; TITULO BREAKOUT - AMARILLO
+    ; ===================================
+
+    MOV DH, 4
+    MOV DL, 15
+    LEA SI, titulo1
+    MOV CL, 50
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
+
     MOV DH, 5
-    MOV DL, 10
-    CALL MOVER_CURSOR
-    LEA DX, titulo1
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 15
+    LEA SI, titulo2
+    MOV CL, 50
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
+
     MOV DH, 6
-    MOV DL, 10
-    CALL MOVER_CURSOR
-    LEA DX, titulo2
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 15
+    LEA SI, titulo3
+    MOV CL, 50
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
+
     MOV DH, 7
-    MOV DL, 10
-    CALL MOVER_CURSOR
-    LEA DX, titulo3
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 15
+    LEA SI, titulo4
+    MOV CL, 50
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
+
     MOV DH, 8
-    MOV DL, 10
-    CALL MOVER_CURSOR
-    LEA DX, titulo4
-    MOV AH, 09h
-    INT 21h
-    
-    MOV DH, 9
-    MOV DL, 10
-    CALL MOVER_CURSOR
-    LEA DX, titulo5
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 15
+    LEA SI, titulo5
+    MOV CL, 50
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; Subtitulo arcade - Blanco brillante
+    MOV DH, 10
+    MOV DL, 24
+    LEA SI, menu_subtitulo
+    MOV CL, 31
+    MOV BL, 0Fh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; ===================================
+    ; OPCIONES DEL MENU
+    ; ===================================
+
+    ; JUGAR - Amarillo
     MOV DH, 13
     MOV DL, 20
-    CALL MOVER_CURSOR
-    LEA DX, menu_opcion1
-    MOV AH, 09h
-    INT 21h
-    
+    LEA SI, menu_opcion1
+    MOV CL, 19
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; INSTRUCCIONES - Celeste
     MOV DH, 15
     MOV DL, 20
-    CALL MOVER_CURSOR
-    LEA DX, menu_opcion2
-    MOV AH, 09h
-    INT 21h
-    
+    LEA SI, menu_opcion2
+    MOV CL, 27
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; SALIR - Rojo claro
     MOV DH, 17
     MOV DL, 20
-    CALL MOVER_CURSOR
-    LEA DX, menu_opcion3
-    MOV AH, 09h
-    INT 21h
-    
-    ; Mostrar mensaje de seleccion
+    LEA SI, menu_opcion3
+    MOV CL, 19
+    MOV BL, 0Ch
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; Mensaje de seleccion
     MOV DH, 20
     MOV DL, 20
     CALL MOVER_CURSOR
@@ -303,7 +409,7 @@ DIBUJAR_MENU PROC
     MOV AH, 09h
     INT 21h
 
-    ; Mostrar informacion del proyecto
+    ; Informacion del proyecto
     MOV DH, 23
     MOV DL, 20
     CALL MOVER_CURSOR
@@ -311,56 +417,89 @@ DIBUJAR_MENU PROC
     MOV AH, 09h
     INT 21h
 
+    POP SI
     POP DX
+    POP CX
+    POP BX
     RET
 DIBUJAR_MENU ENDP
 
 DIBUJAR_INSTRUCCIONES PROC
+    PUSH BX
+    PUSH CX
     PUSH DX
-    
+    PUSH SI
+
+    ; ===================================
+    ; TITULO - CELESTE BRILLANTE
+    ; ===================================
     MOV DH, 8
-    MOV DL, 20
-    CALL MOVER_CURSOR
-    LEA DX, inst_titulo
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 33
+    LEA SI, inst_titulo
+    ADD SI, 11
+    MOV CL, 13
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; ===================================
+    ; CONTROLES - CELESTE BRILLANTE
+    ; ===================================
     MOV DH, 11
-    MOV DL, 15
-    CALL MOVER_CURSOR
-    LEA DX, inst_linea1
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 18
+    LEA SI, inst_linea1
+    ADD SI, 3
+    MOV CL, 44
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; ===================================
+    ; OBJETIVO - BLANCO BRILLANTE
+    ; ===================================
     MOV DH, 13
-    MOV DL, 15
-    CALL MOVER_CURSOR
-    LEA DX, inst_linea2
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 18
+    LEA SI, inst_linea2
+    ADD SI, 3
+    MOV CL, 40
+    MOV BL, 0Fh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; ===================================
+    ; ADVERTENCIA - BLANCO BRILLANTE
+    ; ===================================
     MOV DH, 15
-    MOV DL, 15
-    CALL MOVER_CURSOR
-    LEA DX, inst_linea3
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 18
+    LEA SI, inst_linea3
+    ADD SI, 3
+    MOV CL, 28
+    MOV BL, 0Fh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; ===================================
+    ; ESC - AMARILLO BRILLANTE
+    ; ===================================
     MOV DH, 17
-    MOV DL, 15
-    CALL MOVER_CURSOR
-    LEA DX, inst_linea4
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 18
+    LEA SI, inst_linea4
+    ADD SI, 3
+    MOV CL, 40
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
+
+    ; ===================================
+    ; REGRESAR - GRIS CLARO
+    ; ===================================
     MOV DH, 20
-    MOV DL, 15
-    CALL MOVER_CURSOR
-    LEA DX, inst_linea5
-    MOV AH, 09h
-    INT 21h
-    
+    MOV DL, 18
+    LEA SI, inst_linea5
+    ADD SI, 3
+    MOV CL, 39
+    MOV BL, 07h
+    CALL IMPRIMIR_MENU_COLOR
+
+    POP SI
     POP DX
+    POP CX
+    POP BX
     RET
 DIBUJAR_INSTRUCCIONES ENDP
 
@@ -369,22 +508,27 @@ DIBUJAR_CAMPO_INICIAL PROC
     PUSH BX
     PUSH CX
     PUSH DX
-    
-    ; Dibujar borde superior decorativo
+
+    ; ==================================
+    ; BORDE SUPERIOR CELESTE
+    ; ==================================
+
+    ; Colocar cursor en fila 0, columna 0
     MOV DH, 0
     MOV DL, 0
-    MOV CX, 80
-BORDE_SUP:
     CALL MOVER_CURSOR
-    MOV AH, 02h
-    MOV DL, 219  ; Bloque sólido
-    INT 21h
-    INC DL
-    LOOP BORDE_SUP
-    
-    ; Dibujar bloques
+
+    ; Dibujar 80 bloques solidos
+    MOV AH, 09h
+    MOV AL, 219
+    MOV BH, 00h
+    MOV BL, 0Bh
+    MOV CX, 80
+    INT 10h
+
+    ; Dibujar los bloques del juego
     CALL DIBUJAR_BLOQUES
-    
+
     POP DX
     POP CX
     POP BX
@@ -550,14 +694,38 @@ COLUMNA_BLOQUES:
     ; Posicionar cursor
     CALL MOVER_CURSOR
     
-    ; Dibujar 3 caracteres del bloque
-    MOV AH, 02h
-    MOV DL, 178  ; Bloque medio
-    INT 21h
-    MOV DL, 177  ; Bloque ligero
-    INT 21h
-    MOV DL, 178
-    INT 21h
+    ; Color segun la fila de bloques
+    MOV BL, 0Ch       ; Rojo brillante
+
+    CMP DH, 4
+    JB COLOR_BLOQUE_LISTO
+
+    MOV BL, 0Eh       ; Amarillo
+    CMP DH, 6
+    JB COLOR_BLOQUE_LISTO
+
+    MOV BL, 0Ah       ; Verde brillante
+    CMP DH, 8
+    JB COLOR_BLOQUE_LISTO
+
+    MOV BL, 0Bh       ; Celeste
+
+COLOR_BLOQUE_LISTO:
+    ; Dibujar bloque con color
+    MOV AH, 09h
+    MOV AL, 178
+    MOV BH, 00h
+
+    MOV CX, 3
+
+    ; Evitar que el ultimo bloque
+    ; se dibuje fuera de la pantalla
+    CMP DL, 78
+    JB DIBUJAR_BLOQUE_COLOR
+    MOV CX, 2
+
+DIBUJAR_BLOQUE_COLOR:
+    INT 10h
     
     ; Restaurar registros
     POP DX
@@ -619,45 +787,67 @@ DIBUJAR_PALETA ENDP
 
 BORRAR_PALETA_ANTERIOR PROC
     PUSH AX
+    PUSH BX
     PUSH CX
     PUSH DX
-    
+
     MOV DH, paleta_y
     MOV DL, paleta_x_anterior
+
     XOR CH, CH
     MOV CL, paleta_ancho
     ADD CL, 2
-    
+
 LOOP_BORRAR_PALETA:
     PUSH CX
     PUSH DX
+
+    ; Posicionar cursor
     CALL MOVER_CURSOR
-    MOV AH, 02h
-    MOV DL, ' '
-    INT 21h
+
+    ; Borrar caracter y su color anterior
+    MOV AH, 09h
+    MOV AL, ' '
+    MOV BH, 00h
+    MOV BL, 07h
+    MOV CX, 1
+    INT 10h
+
     POP DX
     POP CX
-    
+
     INC DL
     LOOP LOOP_BORRAR_PALETA
-    
+
     POP DX
     POP CX
+    POP BX
     POP AX
     RET
 BORRAR_PALETA_ANTERIOR ENDP
 
 DIBUJAR_PELOTA PROC
     PUSH AX
+    PUSH BX
+    PUSH CX
     PUSH DX
+
+    ; Posicionar la pelota
     MOV DH, pelota_y
     MOV DL, pelota_x
     CALL MOVER_CURSOR
-    
-    MOV AH, 02h
-    MOV DL, 254  ; Círculo pequeño
-    INT 21h
+
+    ; Dibujar pelota en amarillo brillante
+    MOV AH, 09h
+    MOV AL, 254
+    MOV BH, 00h
+    MOV BL, 0Eh
+    MOV CX, 1
+    INT 10h
+
     POP DX
+    POP CX
+    POP BX
     POP AX
     RET
 DIBUJAR_PELOTA ENDP
@@ -883,5 +1073,45 @@ DELAY_INNER:
     POP CX
     RET
 DELAY_GAME ENDP
+  
+; ==========================================
+; IMPRIMIR TEXTO DEL MENU CON COLOR
+; Entrada:
+; DS:SI = direccion del texto
+; CL = cantidad de caracteres
+; BL = color
+; DH = fila
+; DL = columna
+; ==========================================
 
+IMPRIMIR_MENU_COLOR PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH BP
+    PUSH ES
+
+    ; Preparar segmento del texto
+    PUSH DS
+    POP ES
+    MOV BP, SI
+
+    ; Longitud del texto
+    XOR CH, CH
+
+    ; BIOS: escribir cadena con atributo
+    MOV AX, 1301h
+    MOV BH, 00h
+    INT 10h
+
+    POP ES
+    POP BP
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+IMPRIMIR_MENU_COLOR ENDP  
+  
 END MAIN

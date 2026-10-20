@@ -51,6 +51,7 @@
     msg_perdiste DB 'PERDISTE! Presiona ENTER para menu$'
     msg_ganaste DB 'GANASTE! Presiona ENTER para menu$'
     msg_puntos DB 'Puntos: $'
+    msg_controles DB 'A/D: MOVER  ESC: MENU$'
     
     juego_activo DB 1
     frame_counter DB 0
@@ -416,7 +417,16 @@ MOSTRAR_INFO PROC
     
     MOV AX, bloques_restantes
     CALL IMPRIMIR_NUMERO
-    
+
+    ; Mostrar controles durante la partida
+    MOV DH, 24
+    MOV DL, 45
+    CALL MOVER_CURSOR
+
+    LEA DX, msg_controles
+    MOV AH, 09h
+    INT 21h
+
     POP DX
     POP AX
     RET

@@ -36,7 +36,7 @@
     menu_opcion1 DB '           1. JUGAR$'
     menu_opcion2 DB '           2. INSTRUCCIONES$'
     menu_opcion3 DB '           3. SALIR$'
-    menu_prompt DB '           Selecciona: $'
+    menu_prompt DB  '        Selecciona 1-3 o J/I/S $'
     menu_pie DB 'PROYECTO BREAKOUT 8086 - CONTROLES A/D$'
     ; Elementos decorativos del titulo arcade
     marco_horizontal DB '+-------------------------------------------------------------+$'
@@ -48,13 +48,13 @@
     inst_linea1 DB '   Usa A y D o las flechas para mover la paleta$'
     inst_linea2 DB '   Destruye todos los bloques con la pelota$'
     inst_linea3 DB '   No dejes que la pelota caiga$'
-    inst_linea4 DB '   Presiona ESC para salir durante el juego$'
+    inst_linea4 DB '   Presiona ESC para volder al menu$'
     inst_linea5 DB '   Presiona cualquier tecla para volver...$'
     
     ; Mensajes del juego
     msg_perdiste DB 'PERDISTE! Presiona ENTER para menu$'
     msg_ganaste DB 'GANASTE! Presiona ENTER para menu$'
-    msg_puntos DB 'Puntos: $'
+    msg_puntos DB '     Puntos: $'
     ; Mensajes de victoria y derrota
     titulo_perdiste DB '*** PERDISTE ***$'
     titulo_ganaste DB '*** GANASTE ***$'
@@ -79,11 +79,28 @@ MOSTRAR_MENU:
     MOV AH, 00h
     INT 16h
     
+    ; OPCION 1: JUGAR
     CMP AL, '1'
     JE INICIAR_JUEGO
+    CMP AL, 'j'
+    JE INICIAR_JUEGO
+    CMP AL, 'J'
+    JE INICIAR_JUEGO
+
+    ; OPCION 2: INSTRUCCIONES
     CMP AL, '2'
     JE MOSTRAR_INSTRUCCIONES
+    CMP AL, 'i'
+    JE MOSTRAR_INSTRUCCIONES
+    CMP AL, 'I'
+    JE MOSTRAR_INSTRUCCIONES
+
+    ; OPCION 3: SALIR
     CMP AL, '3'
+    JE SALIR_PROGRAMA
+    CMP AL, 's'
+    JE SALIR_PROGRAMA
+    CMP AL, 'S'
     JE SALIR_PROGRAMA
     
     JMP MOSTRAR_MENU
@@ -149,25 +166,49 @@ GAME_LOOP:
 VOLVER_MENU:
     JMP MOSTRAR_MENU
     
+; ==========================================
+; MOVIMIENTO DE LA PALETA - IZQUIERDA
+; ==========================================
+
 MOVER_IZQ:
     MOV AL, paleta_x
     MOV paleta_x_anterior, AL
-    CMP AL, 1
-    JLE NO_TECLA
-    DEC AL
+
+    ; Limite izquierdo: columna 1
+    CMP AL, 3
+    JB LIMITE_IZQUIERDO
+
+    ; Mover dos posiciones
+    SUB AL, 2
     MOV paleta_x, AL
     JMP NO_TECLA
-    
+
+LIMITE_IZQUIERDO:
+    MOV paleta_x, 1
+    JMP NO_TECLA
+
+
+; ==========================================
+; MOVIMIENTO DE LA PALETA - DERECHA
+; ==========================================
+
 MOVER_DER:
     MOV AL, paleta_x
     MOV paleta_x_anterior, AL
-    MOV BL, paleta_ancho
-    ADD AL, BL
-    CMP AL, 79
-    JGE NO_TECLA
-    MOV AL, paleta_x
-    INC AL
+
+    ; Limite derecho: columna 67
+    ; La paleta ocupa 12 caracteres
+    CMP AL, 65
+    JA LIMITE_DERECHO
+
+    ; Mover dos posiciones
+    ADD AL, 2
     MOV paleta_x, AL
+    JMP NO_TECLA
+
+LIMITE_DERECHO:
+    MOV paleta_x, 67
+    JMP NO_TECLA
     
 NO_TECLA:
     INC frame_counter
@@ -409,13 +450,13 @@ DIBUJAR_LADOS_MENU:
     MOV AH, 09h
     INT 21h
 
-    ; Informacion del proyecto
+    ; Informacion del proyecto en celeste
     MOV DH, 23
     MOV DL, 20
-    CALL MOVER_CURSOR
-    LEA DX, menu_pie
-    MOV AH, 09h
-    INT 21h
+    LEA SI, menu_pie
+    MOV CL, 38
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
 
     POP SI
     POP DX
@@ -538,7 +579,10 @@ DIBUJAR_CAMPO_INICIAL ENDP
 
 MOSTRAR_INFO PROC
     PUSH AX
+    PUSH BX
+    PUSH CX
     PUSH DX
+    PUSH SI
     
     ; Mostrar puntos en la última línea
     MOV DH, 24
@@ -562,16 +606,18 @@ MOSTRAR_INFO PROC
     MOV AX, bloques_restantes
     CALL IMPRIMIR_NUMERO
 
-    ; Mostrar controles durante la partida
+    ; Mostrar controles en celeste brillante
     MOV DH, 24
     MOV DL, 45
-    CALL MOVER_CURSOR
-
-    LEA DX, msg_controles
-    MOV AH, 09h
-    INT 21h
-
+    LEA SI, msg_controles
+    MOV CL, 21
+    MOV BL, 0Bh
+    CALL IMPRIMIR_MENU_COLOR
+    
+    POP SI
     POP DX
+    POP CX
+    POP BX
     POP AX
     RET
 MOSTRAR_INFO ENDP
@@ -643,9 +689,15 @@ REINICIAR_JUEGO ENDP
 
 LIMPIAR_PANTALLA PROC
     PUSH AX
+
+    ; Establecer modo texto 80x25
     MOV AH, 00h
     MOV AL, 03h
     INT 10h
+
+    ; Ocultar cursor despues del cambio de modo
+    CALL OCULTAR_CURSOR
+
     POP AX
     RET
 LIMPIAR_PANTALLA ENDP
@@ -1075,13 +1127,15 @@ DELAY_INNER:
 DELAY_GAME ENDP
   
 ; ==========================================
-; IMPRIMIR TEXTO DEL MENU CON COLOR
-; Entrada:
+; IMPRIMIR TEXTO CON COLOR
+; ==========================================
+; ENTRADA:
 ; DS:SI = direccion del texto
-; CL = cantidad de caracteres
 ; BL = color
 ; DH = fila
 ; DL = columna
+;
+; Detecta automaticamente el final '$'
 ; ==========================================
 
 IMPRIMIR_MENU_COLOR PROC
@@ -1089,24 +1143,37 @@ IMPRIMIR_MENU_COLOR PROC
     PUSH BX
     PUSH CX
     PUSH DX
+    PUSH SI
     PUSH BP
     PUSH ES
 
     ; Preparar segmento del texto
     PUSH DS
     POP ES
+
+    ; Guardar inicio de la cadena
     MOV BP, SI
 
-    ; Longitud del texto
-    XOR CH, CH
+    ; Contar caracteres hasta encontrar '$'
+    XOR CX, CX
 
-    ; BIOS: escribir cadena con atributo
+CONTAR_TEXTO_COLOR:
+    CMP BYTE PTR [SI], '$'
+    JE IMPRIMIR_TEXTO_COLOR
+
+    INC SI
+    INC CX
+    JMP CONTAR_TEXTO_COLOR
+
+IMPRIMIR_TEXTO_COLOR:
+    ; Funcion BIOS para mostrar texto con color
     MOV AX, 1301h
     MOV BH, 00h
     INT 10h
 
     POP ES
     POP BP
+    POP SI
     POP DX
     POP CX
     POP BX

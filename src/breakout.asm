@@ -587,31 +587,32 @@ DIBUJAR_BLOQUES ENDP
 
 DIBUJAR_PALETA PROC
     PUSH AX
+    PUSH BX
     PUSH CX
     PUSH DX
-    
+
+    ; Posicionar la paleta
     MOV DH, paleta_y
     MOV DL, paleta_x
+    CALL MOVER_CURSOR
+
+    ; Dibujar paleta en celeste brillante
+    MOV AH, 09h
+    MOV AL, 223
+    MOV BH, 00h
+    MOV BL, 0Bh
+
+    ; Mantener el ancho original
     XOR CH, CH
     MOV CL, paleta_ancho
-    
-    CALL MOVER_CURSOR
-    MOV AH, 02h
-    MOV DL, 220  ; Borde superior
-    INT 21h
-    
-LOOP_PALETA:
-    MOV AH, 02h
-    MOV DL, 223  ; Borde inferior
-    INT 21h
-    LOOP LOOP_PALETA
-    
-    MOV AH, 02h
-    MOV DL, 220
-    INT 21h
-    
+    ADD CX, 2
+
+    ; Mostrar caracteres con color
+    INT 10h
+
     POP DX
     POP CX
+    POP BX
     POP AX
     RET
 DIBUJAR_PALETA ENDP

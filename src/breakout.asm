@@ -37,10 +37,11 @@
     menu_opcion2 DB '           2. INSTRUCCIONES$'
     menu_opcion3 DB '           3. SALIR$'
     menu_prompt DB '           Selecciona: $'
+    menu_pie DB 'PROYECTO BREAKOUT 8086 - CONTROLES A/D$'
     
     ; Instrucciones
     inst_titulo DB '           INSTRUCCIONES$'
-    inst_linea1 DB '   Usa las flechas para mover la paleta$'
+    inst_linea1 DB '   Usa A y D o las flechas para mover la paleta$'
     inst_linea2 DB '   Destruye todos los bloques con la pelota$'
     inst_linea3 DB '   No dejes que la pelota caiga$'
     inst_linea4 DB '   Presiona ESC para salir durante el juego$'
@@ -110,12 +111,29 @@ GAME_LOOP:
     MOV AH, 00h
     INT 16h
     
-    CMP AL, 27          ; ESC
+    ; Salir al menu con ESC
+    CMP AL, 27
     JE VOLVER_MENU
-    CMP AH, 4Bh         ; Izquierda
+
+    ; Mover la paleta a la izquierda con A
+    CMP AL, 'a'
     JE MOVER_IZQ
-    CMP AH, 4Dh         ; Derecha
+    CMP AL, 'A'
+    JE MOVER_IZQ
+
+    ; Mover la paleta a la derecha con D
+    CMP AL, 'd'
     JE MOVER_DER
+    CMP AL, 'D'
+    JE MOVER_DER
+
+    ; Mantener las flechas originales
+    CMP AH, 4Bh
+    JE MOVER_IZQ
+
+    CMP AH, 4Dh
+    JE MOVER_DER
+
     JMP NO_TECLA
     
 VOLVER_MENU:
@@ -276,13 +294,22 @@ DIBUJAR_MENU PROC
     MOV AH, 09h
     INT 21h
     
+    ; Mostrar mensaje de seleccion
     MOV DH, 20
     MOV DL, 20
     CALL MOVER_CURSOR
     LEA DX, menu_prompt
     MOV AH, 09h
     INT 21h
-    
+
+    ; Mostrar informacion del proyecto
+    MOV DH, 23
+    MOV DL, 20
+    CALL MOVER_CURSOR
+    LEA DX, menu_pie
+    MOV AH, 09h
+    INT 21h
+
     POP DX
     RET
 DIBUJAR_MENU ENDP

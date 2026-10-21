@@ -1113,7 +1113,7 @@ CHECK_BLOQUES:
     RET
     
 PERDER:
-    MOV juego_activo, 0
+    CALL PERDER_VIDA
     POP CX
     POP BX
     POP AX

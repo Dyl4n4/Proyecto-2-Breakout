@@ -24,7 +24,9 @@
     ; Bloques
     bloques DB 160 DUP(1)    
     bloques_restantes DW 160
-    puntos DW 0
+    puntos DW 0   
+    vidas DB 3
+    high_score DW 0
     
     ; Mensajes del menú
     titulo1 DB '  ____  ____  _____    _    _  _____  _   _ _____ $'
@@ -54,13 +56,16 @@
     ; Mensajes del juego
     msg_perdiste DB 'PERDISTE! Presiona ENTER para menu$'
     msg_ganaste DB 'GANASTE! Presiona ENTER para menu$'
-    msg_puntos DB '     Puntos: $'
+    msg_puntos DB '     Puntos: $'      
+    msg_record DB '     Record: $'
     ; Mensajes de victoria y derrota
     titulo_perdiste DB '*** PERDISTE ***$'
     titulo_ganaste DB '*** GANASTE ***$'
     msg_volver_menu DB 'Presiona ENTER para volver al menu$'
     linea_final DB '========================================$'
     msg_controles DB 'A/D: MOVER  ESC: MENU$'
+    msg_pausa DB '** PAUSA **$'
+    msg_pausa_borra DB 11 DUP(' '), '$'
     
     juego_activo DB 1
     frame_counter DB 0
@@ -141,6 +146,11 @@ GAME_LOOP:
     ; Salir al menu con ESC
     CMP AL, 27
     JE VOLVER_MENU
+    ; Pausar con P
+    CMP AL, 'p'
+    JE PAUSAR
+    CMP AL, 'P'
+    JE PAUSAR
 
     ; Mover la paleta a la izquierda con A
     CMP AL, 'a'
@@ -164,7 +174,33 @@ GAME_LOOP:
     JMP NO_TECLA
     
 VOLVER_MENU:
-    JMP MOSTRAR_MENU
+    JMP MOSTRAR_MENU  
+      
+PAUSAR:
+    ; Mostrar mensaje de pausa en amarillo
+    MOV DH, 12
+    MOV DL, 34
+    LEA SI, msg_pausa
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
+
+ESPERAR_REANUDAR:
+    MOV AH, 00h
+    INT 16h
+    CMP AL, 'p'
+    JE REANUDAR
+    CMP AL, 'P'
+    JE REANUDAR
+    JMP ESPERAR_REANUDAR
+
+REANUDAR:
+    ; Borrar el mensaje de pausa
+    MOV DH, 12
+    MOV DL, 34
+    LEA SI, msg_pausa_borra
+    MOV BL, 07h
+    CALL IMPRIMIR_MENU_COLOR
+    JMP NO_TECLA
     
 ; ==========================================
 ; MOVIMIENTO DE LA PALETA - IZQUIERDA
@@ -255,7 +291,14 @@ MOSTRAR_GANASTE_MSG:
     MOV BL, 0Ah
     CALL IMPRIMIR_MENU_COLOR
 
-MOSTRAR_MSG:
+MOSTRAR_MSG:      
+    ; Actualizar High Score si se supero
+    MOV AX, puntos
+    CMP AX, high_score
+    JBE NO_NUEVO_RECORD
+    MOV high_score, AX
+NO_NUEVO_RECORD:
+
     ; Mostrar puntuacion final
     MOV DH, 13
     MOV DL, 30
@@ -263,8 +306,21 @@ MOSTRAR_MSG:
 
     LEA DX, msg_puntos
     MOV AH, 09h
+    INT 21h  
+    MOV AX, puntos
+
+    CALL IMPRIMIR_NUMERO    
+    
+        ; Mostrar High Score
+    MOV DH, 14
+    MOV DL, 30
+    CALL MOVER_CURSOR
+
+    LEA DX, msg_record
+    MOV AH, 09h
     INT 21h
 
+    MOV AX, high_score
     CALL IMPRIMIR_NUMERO
 
     ; Linea decorativa inferior
@@ -448,7 +504,16 @@ DIBUJAR_LADOS_MENU:
     CALL MOVER_CURSOR
     LEA DX, menu_prompt
     MOV AH, 09h
+    INT 21h 
+    ; Mostrar High Score en el menu
+    MOV DH, 22
+    MOV DL, 28
+    CALL MOVER_CURSOR
+    LEA DX, msg_record
+    MOV AH, 09h
     INT 21h
+    MOV AX, high_score
+    CALL IMPRIMIR_NUMERO
 
     ; Informacion del proyecto en celeste
     MOV DH, 23
@@ -590,7 +655,8 @@ MOSTRAR_INFO PROC
     CALL MOVER_CURSOR
     LEA DX, msg_puntos
     MOV AH, 09h
-    INT 21h
+    INT 21h     
+    MOV AX, puntos
     CALL IMPRIMIR_NUMERO
     
     ; Mostrar bloques restantes
@@ -604,7 +670,23 @@ MOSTRAR_INFO PROC
     INT 21h
     
     MOV AX, bloques_restantes
-    CALL IMPRIMIR_NUMERO
+    CALL IMPRIMIR_NUMERO 
+    MOV AH, 02h
+    MOV DL, ' '
+    INT 21h    
+    
+    ; Mostrar vidas
+    MOV DH, 24
+    MOV DL, 32
+    CALL MOVER_CURSOR
+    MOV AH, 02h
+    MOV DL, 'V'
+    INT 21h
+    MOV DL, ':'
+    INT 21h
+    MOV DL, vidas
+    ADD DL, '0'
+    INT 21h
 
     ; Mostrar controles en celeste brillante
     MOV DH, 24
@@ -628,7 +710,8 @@ IMPRIMIR_NUMERO PROC
     PUSH CX
     PUSH DX
     
-    MOV AX, puntos
+    ;MOV AX, puntos(ahora el numero a imprimir llega en AX)  
+    
     MOV CX, 0
     MOV BX, 10
     
@@ -678,6 +761,7 @@ REINICIAR_BLOQUES_LOOP:
     
     MOV bloques_restantes, 160
     MOV puntos, 0
+    MOV vidas, 3
     MOV juego_activo, 1
     MOV frame_counter, 0
     
@@ -685,7 +769,35 @@ REINICIAR_BLOQUES_LOOP:
     POP BX
     POP AX
     RET
-REINICIAR_JUEGO ENDP
+REINICIAR_JUEGO ENDP     
+
+; ==========================================
+; PERDER_VIDA
+; Se llama cuando la pelota cae.
+; Resta una vida. Si quedan, reubica la pelota.
+; Si no quedan, termina el juego.
+; ==========================================
+PERDER_VIDA PROC
+    PUSH AX
+
+    DEC vidas
+    CMP vidas, 0
+    JE SIN_VIDAS
+
+    ; Quedan vidas: la pelota vuelve al punto de salida
+    MOV pelota_x, 40
+    MOV pelota_y, 18
+    MOV pelota_dx, 1
+    MOV pelota_dy, 255
+    JMP FIN_PERDER_VIDA
+
+SIN_VIDAS:
+    MOV juego_activo, 0
+
+FIN_PERDER_VIDA:
+    POP AX
+    RET
+PERDER_VIDA ENDP
 
 LIMPIAR_PANTALLA PROC
     PUSH AX
@@ -1001,7 +1113,7 @@ CHECK_BLOQUES:
     RET
     
 PERDER:
-    MOV juego_activo, 0
+    CALL PERDER_VIDA
     POP CX
     POP BX
     POP AX

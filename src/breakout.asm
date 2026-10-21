@@ -56,7 +56,8 @@
     ; Mensajes del juego
     msg_perdiste DB 'PERDISTE! Presiona ENTER para menu$'
     msg_ganaste DB 'GANASTE! Presiona ENTER para menu$'
-    msg_puntos DB '     Puntos: $'
+    msg_puntos DB '     Puntos: $'      
+    msg_record DB '     Record: $'
     ; Mensajes de victoria y derrota
     titulo_perdiste DB '*** PERDISTE ***$'
     titulo_ganaste DB '*** GANASTE ***$'
@@ -290,7 +291,14 @@ MOSTRAR_GANASTE_MSG:
     MOV BL, 0Ah
     CALL IMPRIMIR_MENU_COLOR
 
-MOSTRAR_MSG:
+MOSTRAR_MSG:      
+    ; Actualizar High Score si se supero
+    MOV AX, puntos
+    CMP AX, high_score
+    JBE NO_NUEVO_RECORD
+    MOV high_score, AX
+NO_NUEVO_RECORD:
+
     ; Mostrar puntuacion final
     MOV DH, 13
     MOV DL, 30
@@ -298,8 +306,21 @@ MOSTRAR_MSG:
 
     LEA DX, msg_puntos
     MOV AH, 09h
+    INT 21h  
+    MOV AX, puntos
+
+    CALL IMPRIMIR_NUMERO    
+    
+        ; Mostrar High Score
+    MOV DH, 14
+    MOV DL, 30
+    CALL MOVER_CURSOR
+
+    LEA DX, msg_record
+    MOV AH, 09h
     INT 21h
 
+    MOV AX, high_score
     CALL IMPRIMIR_NUMERO
 
     ; Linea decorativa inferior
@@ -483,7 +504,16 @@ DIBUJAR_LADOS_MENU:
     CALL MOVER_CURSOR
     LEA DX, menu_prompt
     MOV AH, 09h
+    INT 21h 
+    ; Mostrar High Score en el menu
+    MOV DH, 22
+    MOV DL, 28
+    CALL MOVER_CURSOR
+    LEA DX, msg_record
+    MOV AH, 09h
     INT 21h
+    MOV AX, high_score
+    CALL IMPRIMIR_NUMERO
 
     ; Informacion del proyecto en celeste
     MOV DH, 23
@@ -625,7 +655,8 @@ MOSTRAR_INFO PROC
     CALL MOVER_CURSOR
     LEA DX, msg_puntos
     MOV AH, 09h
-    INT 21h
+    INT 21h     
+    MOV AX, puntos
     CALL IMPRIMIR_NUMERO
     
     ; Mostrar bloques restantes
@@ -639,7 +670,10 @@ MOSTRAR_INFO PROC
     INT 21h
     
     MOV AX, bloques_restantes
-    CALL IMPRIMIR_NUMERO     
+    CALL IMPRIMIR_NUMERO 
+    MOV AH, 02h
+    MOV DL, ' '
+    INT 21h    
     
     ; Mostrar vidas
     MOV DH, 24
@@ -676,7 +710,8 @@ IMPRIMIR_NUMERO PROC
     PUSH CX
     PUSH DX
     
-    MOV AX, puntos
+    ;MOV AX, puntos(ahora el numero a imprimir llega en AX)  
+    
     MOV CX, 0
     MOV BX, 10
     

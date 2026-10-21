@@ -24,7 +24,9 @@
     ; Bloques
     bloques DB 160 DUP(1)    
     bloques_restantes DW 160
-    puntos DW 0
+    puntos DW 0   
+    vidas DB 3
+    high_score DW 0
     
     ; Mensajes del menú
     titulo1 DB '  ____  ____  _____    _    _  _____  _   _ _____ $'
@@ -61,6 +63,8 @@
     msg_volver_menu DB 'Presiona ENTER para volver al menu$'
     linea_final DB '========================================$'
     msg_controles DB 'A/D: MOVER  ESC: MENU$'
+    msg_pausa DB '** PAUSA **$'
+    msg_pausa_borra DB 11 DUP(' '), '$'
     
     juego_activo DB 1
     frame_counter DB 0
@@ -141,6 +145,11 @@ GAME_LOOP:
     ; Salir al menu con ESC
     CMP AL, 27
     JE VOLVER_MENU
+    ; Pausar con P
+    CMP AL, 'p'
+    JE PAUSAR
+    CMP AL, 'P'
+    JE PAUSAR
 
     ; Mover la paleta a la izquierda con A
     CMP AL, 'a'
@@ -164,7 +173,33 @@ GAME_LOOP:
     JMP NO_TECLA
     
 VOLVER_MENU:
-    JMP MOSTRAR_MENU
+    JMP MOSTRAR_MENU  
+      
+PAUSAR:
+    ; Mostrar mensaje de pausa en amarillo
+    MOV DH, 12
+    MOV DL, 34
+    LEA SI, msg_pausa
+    MOV BL, 0Eh
+    CALL IMPRIMIR_MENU_COLOR
+
+ESPERAR_REANUDAR:
+    MOV AH, 00h
+    INT 16h
+    CMP AL, 'p'
+    JE REANUDAR
+    CMP AL, 'P'
+    JE REANUDAR
+    JMP ESPERAR_REANUDAR
+
+REANUDAR:
+    ; Borrar el mensaje de pausa
+    MOV DH, 12
+    MOV DL, 34
+    LEA SI, msg_pausa_borra
+    MOV BL, 07h
+    CALL IMPRIMIR_MENU_COLOR
+    JMP NO_TECLA
     
 ; ==========================================
 ; MOVIMIENTO DE LA PALETA - IZQUIERDA
@@ -604,7 +639,20 @@ MOSTRAR_INFO PROC
     INT 21h
     
     MOV AX, bloques_restantes
-    CALL IMPRIMIR_NUMERO
+    CALL IMPRIMIR_NUMERO     
+    
+    ; Mostrar vidas
+    MOV DH, 24
+    MOV DL, 32
+    CALL MOVER_CURSOR
+    MOV AH, 02h
+    MOV DL, 'V'
+    INT 21h
+    MOV DL, ':'
+    INT 21h
+    MOV DL, vidas
+    ADD DL, '0'
+    INT 21h
 
     ; Mostrar controles en celeste brillante
     MOV DH, 24
@@ -678,6 +726,7 @@ REINICIAR_BLOQUES_LOOP:
     
     MOV bloques_restantes, 160
     MOV puntos, 0
+    MOV vidas, 3
     MOV juego_activo, 1
     MOV frame_counter, 0
     
@@ -685,7 +734,35 @@ REINICIAR_BLOQUES_LOOP:
     POP BX
     POP AX
     RET
-REINICIAR_JUEGO ENDP
+REINICIAR_JUEGO ENDP     
+
+; ==========================================
+; PERDER_VIDA
+; Se llama cuando la pelota cae.
+; Resta una vida. Si quedan, reubica la pelota.
+; Si no quedan, termina el juego.
+; ==========================================
+PERDER_VIDA PROC
+    PUSH AX
+
+    DEC vidas
+    CMP vidas, 0
+    JE SIN_VIDAS
+
+    ; Quedan vidas: la pelota vuelve al punto de salida
+    MOV pelota_x, 40
+    MOV pelota_y, 18
+    MOV pelota_dx, 1
+    MOV pelota_dy, 255
+    JMP FIN_PERDER_VIDA
+
+SIN_VIDAS:
+    MOV juego_activo, 0
+
+FIN_PERDER_VIDA:
+    POP AX
+    RET
+PERDER_VIDA ENDP
 
 LIMPIAR_PANTALLA PROC
     PUSH AX

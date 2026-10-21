@@ -19,7 +19,12 @@
     pelota_x DB 40          
     pelota_y DB 18          
     pelota_dx DB 1                 
-    pelota_dy DB 255        ; -1 
+    pelota_dy DB 255        ; -1
+
+    ; INTEGRANTE 2: posicion previa para determinar el lado del impacto.
+    ; El motor actualiza estos datos al iniciar cada movimiento.
+    fisica_x_previa DB 40
+    fisica_y_previa DB 18 
     
     ; Bloques
     bloques DB 160 DUP(1)    
@@ -1031,188 +1036,290 @@ BORRAR_PELOTA PROC
     RET
 BORRAR_PELOTA ENDP
 
+; ===============================================================
+; INTEGRANTE 2 - MOTOR DE MOVIMIENTO Y COLISIONES
+; Coordenadas: modo texto 80x25; fila 0 es borde superior.
+; dx/dy: 1 = positivo, 255 = -1 (byte con signo).
+; La paleta se dibuja con paleta_ancho + 2 caracteres.
+;
+; Procedimiento MOVER_PELOTA:
+; - guarda posicion previa
+; - actualiza posicion con velocidad en x/y
+; - invierte velocidad en paredes y techo sin salirse de pantalla
+; - rebota contra paleta solo cuando baja
+; - controla direccion horizontal segun mitad de la paleta
+; - delega impactos a VERIFICAR_COLISION_BLOQUES
+; - delega perdida de vida a PERDER_VIDA (Integrante 3)
+; Conserva AX, BX, CX, DX.
+; ===============================================================
 MOVER_PELOTA PROC
     PUSH AX
     PUSH BX
     PUSH CX
-    
+    PUSH DX
+
+    ; Guardar el punto anterior para analizar impactos laterales.
     MOV AL, pelota_x
+    MOV fisica_x_previa, AL
     MOV BL, pelota_dx
     ADD AL, BL
     MOV pelota_x, AL
-    
+
     MOV AL, pelota_y
+    MOV fisica_y_previa, AL
     MOV BL, pelota_dy
     ADD AL, BL
     MOV pelota_y, AL
-    
-    ; Colisión pared izquierda
+
+    ; Limites horizontales: columna 1 a 79.
+    ; Se permite llegar a 78 y 79, donde se dibuja el ultimo bloque.
     MOV AL, pelota_x
     CMP AL, 1
-    JLE REBOTAR_X
-    
-    ; Colisión pared derecha
-    MOV AL, pelota_x
-    CMP AL, 78
-    JGE REBOTAR_X
-    JMP CHECK_Y
-    
-REBOTAR_X:
-    MOV AL, pelota_dx
-    NEG AL
-    MOV pelota_dx, AL
-    MOV AL, pelota_x
-    MOV BL, pelota_dx
-    ADD AL, BL
-    MOV pelota_x, AL
-    
-CHECK_Y:
-    ; Colisión techo
+    JA FIS_VER_DERECHA
+    MOV pelota_x, 1
+    MOV pelota_dx, 1
+    JMP FIS_VER_TECHO
+
+FIS_VER_DERECHA:
+    CMP AL, 79
+    JB FIS_VER_TECHO
+    MOV pelota_x, 79
+    MOV pelota_dx, 255
+
+FIS_VER_TECHO:
+    ; Fila 0: borde. La pelota permanece en fila >= 1.
     MOV AL, pelota_y
     CMP AL, 1
-    JLE REBOTAR_Y_UP
-    
-    ; Colisión paleta
+    JA FIS_VER_PALETA
+    MOV pelota_y, 1
+    MOV pelota_dy, 1
+
+FIS_VER_PALETA:
+    ; Evitar colision falsa cuando la pelota va hacia arriba.
+    CMP pelota_dy, 1
+    JE FIS_PALETA_BAJANDO
+    JMP FIS_VER_BLOQUES
+
+FIS_PALETA_BAJANDO:
     MOV AL, pelota_y
-    MOV BL, paleta_y
-    CMP AL, BL
-    JNE CHECK_BLOQUES
-    
+    CMP AL, paleta_y
+    JE FIS_PALETA_FILACORRECTA
+    JMP FIS_VER_BLOQUES
+
+FIS_PALETA_FILACORRECTA:
+    ; Coordenadas validas: paleta_x ... paleta_x + ancho + 1.
     MOV AL, pelota_x
+    CMP AL, paleta_x
+    JAE FIS_PALETA_DENTRO_IZQ
+    JMP FIS_VER_BLOQUES
+
+FIS_PALETA_DENTRO_IZQ:
     MOV BL, paleta_x
+    ADD BL, paleta_ancho
+    ADD BL, 2
     CMP AL, BL
-    JL CHECK_BLOQUES
-    
-    MOV AL, pelota_x
-    MOV BL, paleta_x
-    MOV CL, paleta_ancho
-    ADD CL, 2
-    ADD BL, CL
-    CMP AL, BL
-    JGE CHECK_BLOQUES
-    
-REBOTAR_Y_UP:
-    MOV AL, pelota_dy
-    NEG AL
-    MOV pelota_dy, AL
-    MOV AL, pelota_y
-    MOV BL, pelota_dy
-    ADD AL, BL
+    JB FIS_PALETA_IMPACTO
+    JMP FIS_VER_BLOQUES
+
+FIS_PALETA_IMPACTO:
+    ; Situar pelota encima de la paleta y subir.
+    MOV AL, paleta_y
+    DEC AL
     MOV pelota_y, AL
-    
-CHECK_BLOQUES:
+    MOV pelota_dy, 255
+
+    ; Posicion de contacto con respecto a inicio de la paleta.
+    ; Primera mitad rebota a izquierda; segunda, a derecha.
+    MOV AL, pelota_x
+    SUB AL, paleta_x
+    MOV BL, paleta_ancho
+    ADD BL, 2
+    SHR BL, 1
+    CMP AL, BL
+    JAE FIS_GOLPE_DERECHO
+    MOV pelota_dx, 255
+    JMP FIS_VER_BLOQUES
+
+FIS_GOLPE_DERECHO:
+    MOV pelota_dx, 1
+
+FIS_VER_BLOQUES:
     CALL VERIFICAR_COLISION_BLOQUES
-    
+
+    ; Si llego a la ultima fila, la pelota se perdio.
     MOV AL, pelota_y
     CMP AL, 24
-    JGE PERDER
-    
-    POP CX
-    POP BX
-    POP AX
-    RET
-    
-PERDER:
+    JB FIS_MOVIMIENTO_FIN
     CALL PERDER_VIDA
+
+FIS_MOVIMIENTO_FIN:
+    POP DX
     POP CX
     POP BX
     POP AX
     RET
 MOVER_PELOTA ENDP
 
+; ===============================================================
+; INTEGRANTE 2 - COLISION REAL CON BLOQUES (8 filas x 20 columnas)
+; Fila de juego: 2..9. Bloques inician en x=2+4*columna.
+; Un bloque comun ocupa 3 caracteres; el cuarto es separacion.
+; Ultima columna inicia en x=78, y solo caben x=78 y 79.
+; Conserva AX, BX, CX, DX, SI.
+; ===============================================================
 VERIFICAR_COLISION_BLOQUES PROC
     PUSH AX
     PUSH BX
     PUSH CX
     PUSH DX
-    
+    PUSH SI
+
+    ; Validar fila antes de calcular indice.
     MOV AL, pelota_y
     CMP AL, 2
-    JL FIN_VERIFICAR
+    JAE FIS_COL_MIN_Y_OK
+    JMP FIS_COL_FIN
+FIS_COL_MIN_Y_OK:
     CMP AL, 10
-    JGE FIN_VERIFICAR
-    
+    JB FIS_COL_Y_OK
+    JMP FIS_COL_FIN
+FIS_COL_Y_OK:
+
+    ; Validar columna. Debe incluir x=78 y 79.
     MOV AL, pelota_x
     CMP AL, 2
-    JL FIN_VERIFICAR
-    CMP AL, 78
-    JGE FIN_VERIFICAR
-    
-    ; Calcular fila
+    JAE FIS_COL_MIN_X_OK
+    JMP FIS_COL_FIN
+FIS_COL_MIN_X_OK:
+    CMP AL, 79
+    JBE FIS_COL_X_OK
+    JMP FIS_COL_FIN
+FIS_COL_X_OK:
+
+    ; Calcular columna y desplazamiento dentro de la celda.
+    ; (x - 2) / 4 => AL: columna, AH: resto 0..3.
+    XOR AX, AX
+    MOV AL, pelota_x
+    SUB AL, 2
+    MOV CL, 4
+    DIV CL
+
+    CMP AL, 20
+    JB FIS_COL_COLUMNA_OK
+    JMP FIS_COL_FIN
+FIS_COL_COLUMNA_OK:
+    ; Resto 3 representa el espacio ENTRE bloques: sin choque.
+    CMP AH, 3
+    JB FIS_COL_NO_ES_HUECO
+    JMP FIS_COL_FIN
+FIS_COL_NO_ES_HUECO:
+    ; El ultimo bloque solo dispone de dos caracteres (78 y 79).
+    CMP AL, 19
+    JNE FIS_COL_CALC_INDICE
+    CMP AH, 2
+    JB FIS_COL_CALC_INDICE
+    JMP FIS_COL_FIN
+
+FIS_COL_CALC_INDICE:
+    MOV DL, AL
+
+    ; Indice lineal: (pelota_y - 2) * 20 + columna.
+    XOR AX, AX
     MOV AL, pelota_y
     SUB AL, 2
     MOV BL, 20
     MUL BL
-    MOV BX, AX
-    
-    ; Calcular columna
-    MOV AL, pelota_x
-    SUB AL, 2
-    MOV CL, 4
-    XOR AH, AH
-    DIV CL
-    
-    CMP AL, 20
-    JAE FIN_VERIFICAR
-    
-    XOR AH, AH
-    ADD BX, AX
-    
-    CMP BX, 160
-    JAE FIN_VERIFICAR
-    
-    MOV AL, bloques[BX]
-    CMP AL, 0
-    JE FIN_VERIFICAR
-    
-    ; Destruir bloque
-    MOV bloques[BX], 0
+    XOR BH, BH
+    MOV BL, DL
+    ADD AX, BX
+    MOV SI, AX
+
+    CMP SI, 160
+    JB FIS_COL_INDICE_OK
+    JMP FIS_COL_FIN
+FIS_COL_INDICE_OK:
+    ; Un bloque solo puede destruirse una vez.
+    CMP BYTE PTR bloques[SI], 0
+    JNE FIS_COL_GOLPE_VALIDO
+    JMP FIS_COL_FIN
+
+FIS_COL_GOLPE_VALIDO:
+    MOV BYTE PTR bloques[SI], 0
     DEC bloques_restantes
     ADD puntos, 10
-    
-    ; Borrar el bloque
-    PUSH BX
-    MOV AX, BX
+
+    ; Dibujar vacio exactamente donde estaba el bloque destruido.
+    ; SI / 20 => AL = fila, AH = columna.
+    MOV AX, SI
     MOV BL, 20
     DIV BL
-    
     MOV DH, AL
     ADD DH, 2
-    
     MOV AL, AH
     MOV BL, 4
     MUL BL
     ADD AL, 2
     MOV DL, AL
-    
     CALL MOVER_CURSOR
-    MOV AH, 02h
-    MOV DL, ' '
-    INT 21h
-    MOV DL, ' '
-    INT 21h
-    MOV DL, ' '
-    INT 21h
-    POP BX
-    
-    ; Rebotar
-    MOV AL, pelota_dy
-    NEG AL
-    MOV pelota_dy, AL
-    
+
+    ; Escribir espacios con color estandar para borrar tambien atributo.
+    MOV AH, 09h
+    MOV AL, ' '
+    MOV BH, 0
+    MOV BL, 07h
+    MOV CX, 3
+    CMP DL, 78
+    JB FIS_COL_BORRAR
+    MOV CX, 2          ; el ultimo bloque ocupa columnas 78-79
+FIS_COL_BORRAR:
+    INT 10h
+
+    ; Tipo de impacto: si antes estabamos en una columna de bloque
+    ; distinta o sobre un hueco, venimos desde un lado. Si la pelota
+    ; venia DESDE FUERA de las filas de bloques, el golpe es vertical.
+    MOV AL, fisica_y_previa
+    CMP AL, 2
+    JB FIS_COL_REBOTE_VERTICAL
+    CMP AL, 10
+    JAE FIS_COL_REBOTE_VERTICAL
+    MOV AL, fisica_x_previa
+    CMP AL, 2
+    JAE FIS_COL_ANT_X_MIN
+    JMP FIS_COL_REBOTE_VERTICAL
+FIS_COL_ANT_X_MIN:
+    CMP AL, 79
+    JBE FIS_COL_ANT_X_MAX
+    JMP FIS_COL_REBOTE_VERTICAL
+FIS_COL_ANT_X_MAX:
+    SUB AL, 2
+    XOR AH, AH
+    MOV CL, 4
+    DIV CL
+    MOV DL, AL       ; columna previa
+    MOV CH, AH       ; posicion previa dentro de su celda
+    MOV AX, SI
+    MOV BL, 20
+    DIV BL
+    CMP AH, DL
+    JNE FIS_COL_REBOTE_LATERAL
+    CMP CH, 3       ; venia desde el espacio de esta celda
+    JAE FIS_COL_REBOTE_LATERAL
+
+FIS_COL_REBOTE_VERTICAL:
+    NEG pelota_dy
+    JMP FIS_COL_COMPROBAR_VICTORIA
+
+FIS_COL_REBOTE_LATERAL:
+    NEG pelota_dx
+
+FIS_COL_COMPROBAR_VICTORIA:
     MOV AX, bloques_restantes
     CMP AX, 0
-    JE GANAR
-    
-FIN_VERIFICAR:
-    POP DX
-    POP CX
-    POP BX
-    POP AX
-    RET
-    
-GANAR:
+    JNE FIS_COL_FIN
     MOV juego_activo, 0
+
+FIS_COL_FIN:
+    POP SI
     POP DX
     POP CX
     POP BX

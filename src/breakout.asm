@@ -55,7 +55,7 @@
     inst_linea1 DB '   Usa A y D o las flechas para mover la paleta$'
     inst_linea2 DB '   Destruye todos los bloques con la pelota$'
     inst_linea3 DB '   No dejes que la pelota caiga$'
-    inst_linea4 DB '   Presiona ESC para volder al menu$'
+    inst_linea4 DB '   Presiona ESC para volver al menu$'
     inst_linea5 DB '   Presiona cualquier tecla para volver...$'
     
     ; Mensajes del juego

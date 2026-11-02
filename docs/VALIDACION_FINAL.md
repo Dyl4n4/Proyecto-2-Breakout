@@ -1,0 +1,119 @@
+# Validación técnica final de Breakout 8086
+
+Fecha: 2 de noviembre de 2026 (America/Costa_Rica). Curso EIF205.
+
+## Resultado y alcance
+
+La versión examinada es `dev`, commit `738b1a6797e48f15827c59fcf6aa6b5e4519cd9e`, igual a `origin/dev` tras `git fetch origin`. Se conservó el archivo local sin seguimiento `pruebas/base/BASE.exe_BKP17636` y los ejecutables/auxiliares ignorados. No había cambios en archivos versionados al comenzar.
+
+**59/59 casos controlados pasaron en DOSBox**, además de un barrido de **65.536 combinaciones x,y sin discrepancias de datos ni pila**. También se ejecutó el binario sin instrumentación mediante la interfaz gráfica. Se encontró **un error menor de texto**. La matriz principal tiene **26 aprobados, 1 fallido y 2 pendientes**; “aprobado” se limita al procedimiento y estados realmente probados.
+
+**El proyecto no queda completamente validado:** falta guardar y probar una compilación nueva en emu8086 y realizar una partida libre completa hasta victoria. No se confunden las pruebas aisladas con una campaña completa de integración.
+
+No se modificó `src/breakout.asm`, no se dividió en módulos y no se editaron documentos o evidencias existentes. No se hicieron commits, push, merges ni PR. Solo se añaden este informe y su paquete de evidencias. El trabajo se hizo sobre `dev` sin cambiar de rama.
+
+## Entorno y procedencia
+
+- emu8086 instalado en `C:\emu8086\emu8086.exe`; los auxiliares del binario existente identifican assembler 4.08.
+- DOSBox 0.74-3 instalado. **Sí hubo acceso gráfico** y observación independiente de instrucciones, partida, pausa, reanudación, controles, derrota, récord y menú.
+- FASM 1.64 ya instalado como parte de emu8086: se utilizó para ensamblar exclusivamente los controladores de prueba temporales. Python 3.14 procesó los registros. No se instalaron herramientas.
+- Pruebas aisladas: DOSBox `core=normal`, `cputype=auto`, `cycles=max`. Sesión gráfica sin instrumentación: `cycles=fixed 694`. DOSBox no se presenta como una comprobación de tiempos eléctricos de un 8086 físico. Un primer arranque especificó `cputype=8086`, valor que DOSBox rechazó y sustituyó por `auto`; las configuraciones finales guardadas usan explícitamente `auto`.
+- La nueva instancia de emu8086 no pudo iniciarse (`Reasignación no válida del archivo DLL del sistema` / `spawn UNKNOWN`). Se usó el editor abierto para intentar compilar una copia byte a byte. El ensamblado llegó al diálogo de guardado, pero las ventanas anidadas no mantuvieron el foco fiable. La entrada accidental afectó solo al búfer de la copia temporal, no se guardó y no afectó al fuente del equipo. **No se certifica una compilación nueva ni se atribuye este problema del entorno al programa.**
+- Se reutilizó una copia de `pruebas/base/BASE.exe` (3.796 bytes). Sus instrucciones, declaraciones y cadenas en `BASE.exe.~asm` coinciden con el fuente actual al quitar comentarios y espacios externos. Se compararon **2.257 bytes descritos por el listado** contra el ejecutable, incluyendo **los 1.876/1.876 bytes de código**. La coincidencia no sustituye una compilación reproducible desde cero.
+
+SHA-256 del fuente antes y después: `1c3e6e2e1726c719d10af65f02f827086f96809dc6525becc2bd276e1662042c`.
+
+SHA-256 del EXE reutilizado: `c959b3ab614de8fe27c7cfafc45733390bb3758e0f6bd673c691effc1cb2293d`.
+
+## Metodología e instrumentación temporal
+
+El directorio temporal estuvo fuera del repositorio: `C:\Users\sophie\Documents\Codex\2026-11-02\files-pasted-by-the-user-tarea\work\validacion-8086`.
+
+1. `BASE.EXE` es una copia sin cambios del ejecutable existente. La sesión gráfica cargó esta copia, con su cabecera y reubicación originales.
+2. `HARNESS.ASM` incluye los bytes originales de datos y código, configura su propio segmento DS y llama a las rutinas reales. No reimplementa la física en Python. Solo en esa copia se sustituyen por `RET` los primeros bytes de `NO_TECLA`, `ESPERAR_ENTER` y `MOSTRAR_MENU` (offsets de código 00FFh, 019Dh y 0008h). Así se puede regresar al controlador en lugar de continuar un bucle, esperar Enter o entrar al menú. Esto limita las afirmaciones sobre temporización y navegación hechas a partir de ese controlador.
+3. Los estados controlados cambian únicamente datos de la copia: posiciones y direcciones, puntos, bloques, vidas y récord. Para controles se inyectan teclas mediante BIOS INT 16h/AH=05h. La prueba de 160 bloques posiciona la pelota sobre cada bloque: **no es una partida ganada jugando de principio a fin**.
+4. Cada caso escribe ID, 1.152 bytes del segmento de datos y 4.000 bytes de memoria de video B800h. `RESULT.BIN` tiene 59 registros de 5.154 bytes (304.086 bytes). `evaluar_pruebas.py` coteja resultados explícitos y extrae las 59 pantallas TXT. Estos TXT son lecturas de memoria de video real, **no capturas inventadas ni imágenes generadas**.
+5. `MEMORIA.ASM` incluye el código de colisiones sin los tres parches anteriores. Recorre todos los pares x,y de 0 a 255, reinicia la matriz antes de cada llamada, establece la posición previa fuera de la franja de bloques y compara todo el segmento de datos del juego contra un estado esperado independiente basado en sus rectángulos. También comprueba SP. Resultado: 0 discrepancias y 472 coordenadas con impacto (8 filas × (19×3+2) posiciones). No comprueba toda la RAM, ni toda combinación de direcciones, registros o estado corrupto; complementa los casos laterales y de movimiento del otro controlador.
+6. El análisis estático revisó los procedimientos y las condiciones de límites. Solo complementa la ejecución: ninguna aprobación de la matriz se basa exclusivamente en que el código parece correcto.
+
+## Antecedentes del equipo
+
+La Integrante 1 reportó como correctas en DOSBox las seis pruebas de interfaz solicitadas: menú J/I/S, A/D, flechas, límites de barra, textos/instrucciones y Escape. Se registra ese antecedente como **reporte previo**, no como ejecución independiente de Codex. La documentación está en [CONTRIBUCION_INTEGRANTE_1.md](CONTRIBUCION_INTEGRANTE_1.md) y sus cinco capturas originales permanecen intactas en [evidencias-integrante-1](evidencias-integrante-1/). La afirmación específica de que las seis fueron correctas procede también de la solicitud del usuario.
+
+Los [documentos del Integrante 2](CONTRIBUCION_INTEGRANTE_2.md) y [del Integrante 3](CONTRIBUCION_INTEGRANTE_3.md), y las capturas del Integrante 3, son antecedentes conservados. Sus resultados no se contabilizan como nuevas aprobaciones. La matriz siguiente describe las comprobaciones realizadas ahora.
+
+## Matriz de resultados
+
+Evidencia técnica completa: [VALIDACION_FINAL_evidencias.zip](VALIDACION_FINAL_evidencias.zip). “Caso NN” identifica `resultados.json` y `pantalla-NN.txt` dentro del paquete. Las capturas citadas están en `capturas/`; el manifiesto conserva sus fechas en UTC−06:00 y sus hashes. Los nombres 10 y 13 se corrigieron en el paquete para reflejar que esas imágenes muestran derrota, no retorno al menú.
+
+| ID | Funcionalidad evaluada | Procedimiento utilizado | Resultado esperado | Resultado obtenido | Tipo de verificación | Estado | Evidencia disponible |
+|---|---|---|---|---|---|---|---|
+| I01 | Menú J/I/S y opciones numéricas | I, J, S, 1 y 2 en sesión sin instrumentar; inspección de pantalla | Navegar y salir correctamente | I/2: instrucciones; J/1: partida; S: salida de BASE y DOSBox (código 0). Opción 3 no ejercitada directamente | ejecución | aprobado | Capturas 02,03,04,12,15; registro-sesion.json |
+| I02 | Movimiento A/D | Inyectar A y D en cola BIOS y ejecutar GAME_LOOP real; observar A en partida | Mover dos columnas por pulsación | x=35→33 con A; x=35→37 con D. A observado también en ejecución libre | automatización y ejecución | aprobado | Casos 39,40,43,44; captura 08 |
+| I03 | Flechas | Inyectar scan codes 4Bh/4Dh; observar flecha derecha | Desplazamiento izquierdo/derecho | x=33 y x=37, respectivamente; flecha derecha observada en ejecución libre | automatización y ejecución | aprobado | Casos 45,46; captura 09 |
+| I04 | Límites horizontales de barra | Ejecutar 40 desplazamientos por dirección desde x=35 | Mantener barra dentro del área visible | Satura en x=1 y x=67; ancho visible 12 caracteres | automatización | aprobado | Casos 41,42 |
+| I05 | Textos e instrucciones | Leer instrucciones en DOSBox y memoria B800h | Textos legibles y sin errores ortográficos | Se muestran los textos; aparece “Presiona ESC para volder al menu” | ejecución y automatización | fallido | Capturas 02,15; caso 49; hallazgo D01 |
+| I06 | Escape | Escape durante partida activa; comprobar pantalla siguiente | Volver al menú | Menú visible y récord de sesión conservado | ejecución y automatización | aprobado | Captura 14; caso 48 |
+| E01 | Inicialización | REINICIAR_JUEGO, dibujar y leer datos/video; iniciar con J | 3 vidas, 0 puntos, 160 bloques | 3 / 0 / 160; 160 entradas activas | automatización y ejecución | aprobado | Caso 01; captura 04 |
+| E02 | Pausa | P en partida, esperar 4,6 s y pulsar A; cola BIOS P,A,D,P en ensayo aislado | Detener pelota y barra | Misma posición en capturas separadas 4,6 s; A/D ignoradas durante pausa | ejecución y automatización | aprobado | Capturas 05,06; caso 47 |
+| E03 | Reanudación | Volver a pulsar P en sesión pausada | Quitar PAUSA y continuar desde el estado detenido | Desaparece el aviso y cambia la posición de pelota | ejecución y automatización | aprobado | Capturas 06,07; caso 47 |
+| E04 | Puntuación | Impactar bloques activos, volver a impactar uno eliminado y recorrer tablero | +10 por bloque; sin duplicados | 10 por primer impacto; 1600 tras 160 eliminaciones únicas | automatización | aprobado | Casos 14,31,34; RESULT.BIN |
+| E05 | Pérdida de una vida | MOVER_PELOTA desde (20,23), dx=dy=+1 fuera de barra | Restar una vida y reubicar pelota | Vidas 3→2; pelota (40,18), dy=-1 | automatización | aprobado | Caso 08 |
+| E06 | Conservar progreso | Destruir un bloque y después forzar caída por MOVER_PELOTA | Mantener puntos y bloques restantes | 2 vidas, 10 puntos, 159 bloques y 159 entradas activas | automatización | aprobado | Caso 12 |
+| E07 | Derrota | PERDER_VIDA tres veces y FIN_JUEGO; observar también derrota natural | Terminar al agotar tres vidas | vidas=0, juego_activo=0 y texto PERDISTE; derrota natural observada | automatización y ejecución | aprobado | Caso 13; captura 10-derrota-natural.jpg |
+| E08 | High Score de sesión | Puntajes 200,100,200 en final; regresar al menú de partida natural | Actualizar máximo y conservarlo en nuevas partidas | 200 se conserva con 100 e igualdad; récord natural 150 visible en menú. No es persistencia en disco | automatización y ejecución | aprobado | Casos 35–38; capturas 10,11,14 |
+| E09 | Reinicio desde menú | Enter tras derrota, opción 1 y lectura inicial | Restaurar partida conservando récord | 3 vidas, 0 puntos, 160 bloques; high_score aislado=200 y menú de sesión=150 | ejecución y automatización | aprobado | Caso 38; capturas 11,12 |
+| E10 | Dígitos residuales | MOSTRAR_INFO sin limpiar entre 160,100,99,98,10,9,8,1,0; reinicio real | No dejar cifras anteriores | B:99 y B:9 quedan seguidos de espacios; reinicio muestra 0 y V:3 sin restos. No es una prueba de todas las cadenas posibles | automatización y ejecución | aprobado | Casos 51–59, pantallas TXT; captura 12 |
+| F01 | Ambas paredes | MOVER_PELOTA desde x=1 con dx=-1 y x=79 con dx=+1 | Rebotar y mantener límites | x=1/dx=+1 y x=79/dx=-1 | automatización | aprobado | Casos 02,03 |
+| F02 | Techo | MOVER_PELOTA desde y=1 y dy=-1 | No invadir fila 0; bajar | y=1 y dy=+1 | automatización | aprobado | Caso 04 |
+| F03 | Mitad izquierda de barra | Desde (36,22), dirección (+1,+1) | Subir hacia izquierda | (37,22), dx=-1, dy=-1 | automatización | aprobado | Caso 05; borde en caso 09 |
+| F04 | Mitad derecha de barra | Desde (43,22), dirección (+1,+1) | Subir hacia derecha | (44,22), dx=+1, dy=-1 | automatización | aprobado | Caso 06; borde en caso 10 |
+| F05 | Caída sin tocar barra | Posición fuera del ancho visible; comprobar dirección ascendente por separado | No inventar rebote; descontar vida al llegar a fila 24 | Fuera de barra sigue bajando; caída resta una vida; al subir no rebota | automatización | aprobado | Casos 07,08,11 |
+| F06 | Bloques activos | Colisión en posiciones activas y lectura de matriz/video | Eliminar una entrada y sumar 10 | 160→159 entradas; +10; dirección lateral/vertical distinguida | automatización | aprobado | Casos 14,15,17,32,33 |
+| F07 | Espacios entre bloques | Colisión x=5 y x=77; barrido completo de coordenadas | No eliminar ni puntuar espacios | 0 puntos y 160 bloques; barrido coincide con geometría esperada | automatización | aprobado | Casos 16,18; MEMORIA.BIN |
+| F08 | Bloque ya destruido | Llamar dos veces con la misma posición | No sumar ni restar dos veces | 10 puntos y 159 bloques tras ambos impactos | automatización | aprobado | Caso 31 |
+| F09 | Columnas 78 y 79 | Colisiones directas en ambas coordenadas | Alcanzar último bloque y borrar dos caracteres | En ambos casos +10 y 159 bloques; índices válidos | automatización | aprobado | Casos 19,20; barrido de memoria |
+| F10 | Victoria al eliminar 160 bloques | Recorrer una posición de cada bloque; ejecutar FIN_JUEGO | 1600 puntos, 0 bloques y GANASTE | 1600 / 0; matriz vacía, juego_activo=0 y GANASTE en memoria de video | automatización | aprobado | Caso 34; pantalla-34.txt. Partida libre hasta victoria: V01 pendiente |
+| F11 | Límites de memoria e índices | 65.536 pares x,y de byte; comparar 1.152 bytes de datos con oráculo y SP tras cada colisión; revisar bucles | Solo cambios de bloque/puntos/dirección autorizados; pila equilibrada | 0 discrepancias; 472 posiciones válidas. Estáticamente índice=(y-2)*20+col, rango 0..159 | automatización y análisis estático | aprobado | MEMORIA.ASM, MEMORIA.BIN, memoria-resumen.json; casos 14–30 |
+| C01 | Nueva compilación emu8086 | Abrir copia idéntica y pulsar Compile | Guardar nuevo EXE y ejecutar ese artefacto | Llegó al diálogo de guardado; el control de foco falló y no se confirmó un EXE nuevo. Se probó BASE.exe existente cotejado | ejecución | pendiente | Descripción de entorno y procedencia.json; sin aprobación de compilación nueva |
+| V01 | Partida completa integrada hasta victoria | Jugar de inicio a victoria sin alterar estados | Confirmar todo el recorrido y presentación final en uso real | No realizada; victoria únicamente en banco controlado | ejecución | pendiente | Plan manual mínimo; caso 34 no sustituye esta prueba |
+
+## Errores y observaciones
+
+### D01 — Error ortográfico visible (menor)
+
+La pantalla de instrucciones presenta **“volder al menu”**. Se verificó en DOSBox sin instrumentación y en la lectura B800h del caso 49. La causa está en la cadena `inst_linea4` de `.DATA`. Recomendación: corregirla a “volver al menu” en una tarea posterior autorizada y volver a compilar. No se aplicó la corrección.
+
+### Aspectos de diseño que requieren criterio del equipo
+
+- El High Score se actualiza en `MOSTRAR_MSG`, al finalizar por victoria o derrota. Escape abandona la partida sin pasar por esa actualización. El README ya lo distingue. No se clasifica como fallo sin un requisito de que abandonar también deba registrar récord; conviene confirmar el criterio académico antes de cambiarlo.
+- Durante la pausa solo P reanuda; Escape se ignora. Es coherente con la rutina implementada. Si se desea salida directa desde pausa, requiere un cambio de alcance y una nueva prueba.
+- Las instrucciones no explican P, las tres vidas ni el récord. Es una oportunidad de documentación de la interfaz, además del error ortográfico. No se cambió la aplicación.
+- No se detectaron fallos funcionales en los 59 casos ejecutados ni discrepancias en el barrido de la rutina de colisiones. Esto no demuestra ausencia universal de defectos de integración, temporización o entrada física sostenida.
+
+## Análisis estático complementario
+
+`REINICIAR_JUEGO` inicializa 160 entradas, puntos, vidas y estado; conserva `high_score`. `PERDER_VIDA` no reinicia la matriz ni puntos. La colisión valida 2≤y≤9 y 2≤x≤79 antes de calcular `(y-2)*20+columna`, con columna 0..19 y comprobación adicional de índice menor que 160. Los espacios con resto 3 se excluyen y la última columna acepta sus dos caracteres. Los bucles de reinicio/dibujo recorren índices 0..159.
+
+`MOVER_PELOTA` solo rebota en la barra cuando baja; discrimina las dos mitades. El marcador borra un espacio tras el número de bloques y el reinicio limpia la pantalla. El valor máximo normal de puntos es 1600, dentro de una palabra de 16 bits. Las rutinas examinadas preservan los registros declarados y equilibran PUSH/POP; el barrido verificó SP para las llamadas de colisión. Estas son conclusiones estáticas complementadas por los casos indicados, no nuevas pruebas manuales aprobadas.
+
+## Intervención manual mínima pendiente
+
+1. **C01:** abrir `src/breakout.asm` en emu8086, compilar y guardar un EXE con nombre nuevo fuera de los archivos del equipo. Registrar versión, resultado y hash; ejecutar ese nuevo EXE en DOSBox. Repetir al menos menú, reinicio, pausa y resultado final sobre él. No reemplazar el ejecutable existente sin autorización.
+2. **V01:** realizar una partida completa hasta victoria con el ejecutable sin instrumentación, guardar la pantalla final de 1600 puntos/0 bloques, volver con Enter e iniciar otra partida comprobando el récord. El caso controlado ya validó la eliminación de las 160 entradas y la salida GANASTE, por lo que no hace falta repetir manualmente cada coordenada de bloque.
+
+Como comprobación de usabilidad adicional, se recomienda mantener pulsadas A/D y flechas, alternarlas rápidamente y pausar cerca de una colisión. Los casos existentes cubren pulsaciones y saturación de límites, pero no todas las condiciones de repetición del teclado físico. No se presenta esta recomendación como un fallo observado.
+
+## Evidencias y reproducción
+
+El paquete incluye las copias de fuente y binario usadas, listado/símbolos del compilador, generadores, controladores ASM/EXE, configuraciones, registros binarios, resultados JSON y capturas reales. Los EXE instrumentados son exclusivamente de prueba y no deben entregarse como videojuego final. `procedencia.json` y `MANIFIESTO.json` permiten identificar los artefactos.
+
+Para repetir en este mismo equipo, extraer el paquete en una carpeta de pruebas, conservar allí `BASE.EXE` y usar el FASM existente para ensamblar `HARNESS.ASM` y `MEMORIA.ASM`. Las configuraciones guardadas usan la ruta temporal de esta sesión: adaptar solo la ruta del `mount c` a la carpeta extraída antes de ejecutar DOSBox con `-conf`. `HARNESS.EXE` produce `RESULT.BIN`; `MEMORIA.EXE` produce `MEMORIA.BIN`. `evaluar_pruebas.py` procesa el primero. No es necesario instalar dependencias Python adicionales.
+
+Las capturas 05 y 06 están separadas por aproximadamente 4,6 segundos y muestran la pausa sin desplazamiento; 07 muestra la reanudación. La captura 10 muestra la primera derrota natural, 11 el menú con récord 150, 12 el reinicio a 0/160/3 y 14 el retorno al menú con Escape durante otra partida. La salida con S se comprobó por cierre de BASE y código de salida 0 de la sesión nueva de DOSBox; la sesión de DOSBox que estaba abierta antes de la tarea se conservó.
+
+Comprobaciones de conservación: SHA-256 del fuente idéntico al inicial; `git diff` de archivos versionados vacío; `git diff --check` sin errores. No se cambió ningún archivo existente del equipo. El estado final de Git contiene únicamente este informe y su ZIP como archivos nuevos, además del archivo local sin seguimiento que ya existía.
+
+## Conclusión
+
+El comportamiento implementado supera las comprobaciones funcionales controladas realizadas, y la ejecución gráfica confirmó funciones principales de integración. La detección de colisiones mantuvo sus datos y pila coherentes para todo el dominio de coordenadas de byte ensayado. Se confirmó un error menor de texto. La validación sigue **parcial**, con los dos pendientes C01 y V01; no se declara el proyecto completamente validado ni se ha modificado su lógica.

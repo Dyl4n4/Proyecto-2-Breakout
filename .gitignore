@@ -7,3 +7,6 @@
 *.[sS][yY][mM][bB][oO][lL]
 *.[dD][eE][bB][uU][gG]
 *.~[aA][sS][mM]
+
+# Archivos locales de pruebas
+/pruebas/

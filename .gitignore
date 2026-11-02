@@ -1,0 +1,9 @@
+# Ejecutables locales de prueba; los ejecutables de entrega pueden versionarse.
+/pruebas/base/*.[eE][xX][eE]
+/original/breakdown.exe
+
+# Auxiliares generados por emu8086.
+*.[lL][iI][sS][tT]
+*.[sS][yY][mM][bB][oO][lL]
+*.[dD][eE][bB][uU][gG]
+*.~[aA][sS][mM]

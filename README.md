@@ -2,11 +2,11 @@
 
 ## Descripción
 
-Desarrollo de un videojuego tipo Breakout utilizando lenguaje ensamblador Intel 8086, como parte del Proyecto 2 del curso de Arquitectura de Computadoras.
+Videojuego tipo Breakout desarrollado en ensamblador Intel 8086 para el Proyecto 2 del curso EIF205 — Arquitectura de Computadoras.
 
 El jugador controla una barra para mantener una pelota en movimiento, destruir bloques y acumular puntos.
 
-El proyecto parte de una implementación existente de Breakout, que será adaptada y ampliada por el equipo.
+La versión integrada incorpora los aportes de los tres integrantes en un único archivo [src/breakout.asm](src/breakout.asm), conforme a la autorización del profesor. El tablero contiene 160 bloques (8 filas por 20 columnas), con 10 puntos por bloque destruido. Cada partida comienza con tres vidas; al perder una, la pelota vuelve al punto de salida si quedan vidas. Destruir todos los bloques muestra la victoria; agotar las vidas muestra la derrota.
 
 ## Herramientas necesarias
 
@@ -74,7 +74,7 @@ El menú principal del videojuego debería aparecer en pantalla.
 
 ## 4. Configuración de velocidad
 
-Durante las pruebas iniciales se comprobó que el juego funciona correctamente en **DOSBox 0.74-3 con aproximadamente 694 ciclos de CPU**.
+Las pruebas iniciales documentadas usaron **DOSBox 0.74-3 con aproximadamente 694 ciclos de CPU**. Esta velocidad es una referencia; no constituye una validación completa de la versión integrada.
 
 Si la pelota se mueve demasiado rápido:
 
@@ -83,56 +83,70 @@ Si la pelota se mueve demasiado rápido:
 
 Se recomienda ajustar la velocidad hasta aproximadamente **694 ciclos** antes de jugar.
 
-## 5. Controles del juego
+## 5. Controles y funcionamiento
 
-En la versión base original:
+| Contexto | Tecla | Acción |
+|---|---|---|
+| Menú | 1 o J | Iniciar una partida con tres vidas |
+| Menú | 2 o I | Mostrar instrucciones |
+| Menú | 3 o S | Salir del programa |
+| Partida | A / flecha izquierda | Mover la barra a la izquierda |
+| Partida | D / flecha derecha | Mover la barra a la derecha |
+| Partida | P | Pausar; pulsar P otra vez para reanudar |
+| Partida activa | Esc | Volver al menú |
+| Instrucciones | Cualquier tecla | Volver al menú |
+| Victoria o derrota | Enter | Volver al menú y poder iniciar otra partida |
 
-- **Flecha izquierda:** mover la barra hacia la izquierda.
-- **Flecha derecha:** mover la barra hacia la derecha.
+Los atajos con letras aceptan mayúsculas y minúsculas. Durante la pausa se espera P para continuar; la pelota y la barra permanecen detenidas.
 
-Los controles y las demás funcionalidades podrán cambiar durante el desarrollo del proyecto.
+El marcador muestra puntos, bloques restantes y vidas. El **High Score** se actualiza al finalizar una partida y se muestra en el menú y en las pantallas finales. Se conserva entre partidas durante la misma ejecución del programa; no se guarda en disco. Volver al menú con Esc no pasa por la actualización del récord de fin de partida.
+
+La física integrada limita los rebotes en paredes y techo, detecta la paleta solo cuando la pelota baja y orienta el rebote según la mitad de la barra alcanzada. Las colisiones con bloques distinguen espacios vacíos e impactos laterales o verticales, permiten alcanzar la última columna y evitan volver a puntuar un bloque destruido.
 
 ## 6. Estructura del repositorio
 
 ```text
 Proyecto-2-Breakout/
-├── original/      # Código fuente original y créditos
-├── src/           # Código fuente en desarrollo
-├── pruebas/       # Pruebas y ejecutables locales
-├── docs/          # Documentación técnica
-├── entrega/       # Archivos de entrega final
-└── README.md      # Instrucciones del proyecto
+├── README.md
+├── .gitignore
+├── src/
+│   └── breakout.asm
+├── original/
+│   ├── breakdown_original.asm
+│   └── ORIGEN_Y_CREDITOS.md
+└── docs/
+    ├── CONTRIBUCION_INTEGRANTE_1.md
+    ├── CONTRIBUCION_INTEGRANTE_2.md
+    ├── CONTRIBUCION_INTEGRANTE_3.md
+    ├── evidencias-integrante-1/  (5 capturas)
+    └── evidencias-integrante-3/  (5 capturas)
 ```
 
-El archivo principal de desarrollo es `src/breakout.asm`.
+El código integrado permanece en un solo archivo, sin módulos `.inc`. La copia [original/breakdown_original.asm](original/breakdown_original.asm) conserva el punto de partida sin modificaciones.
 
-El código ubicado en `original/` debe conservarse sin modificaciones para mantener una referencia de la implementación utilizada como punto de partida.
+`pruebas/base/` puede contener el ejecutable y los auxiliares locales de emu8086, excluidos por `.gitignore`. También se excluye el ejecutable local `original/breakdown.exe`. Estos archivos se conservan en disco. `pruebas/` y `entrega/` no necesitan archivos de relleno: la entrega se incorporará cuando existan archivos definitivos. No se excluyen indiscriminadamente todos los ejecutables, por lo que se puede versionar uno de entrega cuando corresponda.
 
 ## 7. Organización del equipo
 
-El trabajo se divide en tres áreas principales:
+| Integrante | Aportes integrados | Documentación |
+|---|---|---|
+| Integrante 1 | Interfaz, colores, controles A/D y flechas, atajos del menú y presentación de pantallas finales | [Contribución 1](docs/CONTRIBUCION_INTEGRANTE_1.md) |
+| Integrante 2 | Física, límites, rebotes en paleta y colisiones con bloques | [Contribución 2](docs/CONTRIBUCION_INTEGRANTE_2.md) |
+| Integrante 3 | Tres vidas, pausa, impresión numérica, puntuación y High Score de sesión | [Contribución 3](docs/CONTRIBUCION_INTEGRANTE_3.md) |
 
-| Integrante | Responsabilidad |
-|---|---|
-| Integrante 1 | Interfaz del videojuego y controles |
-| Integrante 2 | Física, movimiento y colisiones |
-| Integrante 3 | Estados del juego, puntuación y récord |
+Las capturas se conservan en [evidencias del Integrante 1](docs/evidencias-integrante-1/) y [evidencias del Integrante 3](docs/evidencias-integrante-3/).
 
-Cada integrante desarrollará sus modificaciones en su propia rama de Git.
+Los tres aportes están integrados en `dev`. Los documentos individuales conservan su historial técnico y sus consideraciones de integración. La revisión y validación del conjunto preceden a la entrega estable en `main`.
 
-La rama `dev` se utilizará para integrar y probar los cambios del equipo antes de llevarlos a `main`.
+## 8. Estado actual y pruebas documentadas
 
-## 8. Estado actual
+La implementación integrada incluye controles, vidas, pausa, puntuación, récord de sesión, física mejorada y pantallas de victoria y derrota. Esta descripción se basa en el código actual; no implica que se haya ejecutado una nueva prueba completa durante la organización del repositorio.
 
-La versión base fue compilada satisfactoriamente mediante emu8086 y ejecutada en DOSBox 0.74-3.
+- El documento del Integrante 1 registra compilación con emu8086 y ejecución en DOSBox 0.74-3 a aproximadamente 694 ciclos, con comprobaciones de controles, menú y presentación visual.
+- El documento del Integrante 3 registra pruebas de pausa, vidas, puntuación, bloques restantes, High Score, reinicio y estados finales, con capturas conservadas.
+- El documento del Integrante 2 recoge ocho comprobaciones funcionales reportadas y una matriz con validaciones pendientes. Faltan evidencias de física y casos límite como espacios entre bloques, última columna, bloques ya destruidos, techo y último bloque.
 
-**Configuración comprobada:**
-- Ejecutable de prueba: `BASE.EXE`.
-- Tamaño del ejecutable: 2.813 bytes.
-- Velocidad de referencia: 694 ciclos.
-- Estado: versión base funcional.
-
-Las nuevas características se implementarán progresivamente y deberán probarse nuevamente en DOSBox.
+Debe completarse la validación de la versión integrada en DOSBox, incluido el High Score tras los cambios de física. Las pruebas de las contribuciones no sustituyen esa comprobación conjunta. Las instrucciones anteriores de compilación y ejecución siguen siendo el procedimiento para realizarla.
 
 ## 9. Créditos y referencia del código original
 
@@ -140,6 +154,6 @@ Este proyecto utiliza como punto de partida el código de Breakout publicado por
 
 Repositorio original: https://github.com/Benjamin-Solano/Breakout
 
-La información de procedencia y los créditos correspondientes se conservan también en `original/ORIGEN_Y_CREDITOS.md`.
+El código original aportó la base del juego, el movimiento, las colisiones, los bloques y los estados básicos. Las mejoras de interfaz y controles, física y colisiones, vidas, pausa y récord descritas en este README corresponden al equipo académico y se detallan en sus documentos de contribución.
 
-Las modificaciones desarrolladas por el equipo serán documentadas como parte del proyecto académico.
+La procedencia y los créditos se conservan en [original/ORIGEN_Y_CREDITOS.md](original/ORIGEN_Y_CREDITOS.md), junto con la copia del código original.

@@ -2,15 +2,15 @@
 
 Fecha: 2 de noviembre de 2026 (America/Costa_Rica). Curso EIF205.
 
-## Resultado y alcance
+## Resultado y alcance de la ejecución original
 
-La versión examinada es `dev`, commit `738b1a6797e48f15827c59fcf6aa6b5e4519cd9e`, igual a `origin/dev` tras `git fetch origin`. Se conservó el archivo local sin seguimiento `pruebas/base/BASE.exe_BKP17636` y los ejecutables/auxiliares ignorados. No había cambios en archivos versionados al comenzar.
+La versión de la ejecución original fue `dev`, commit `738b1a6797e48f15827c59fcf6aa6b5e4519cd9e`, igual a `origin/dev` tras `git fetch origin`. Se conservó el archivo local sin seguimiento `pruebas/base/BASE.exe_BKP17636` y los ejecutables/auxiliares ignorados. No había cambios en archivos versionados al comenzar.
 
-**59/59 casos controlados pasaron en DOSBox**, además de un barrido de **65.536 combinaciones x,y sin discrepancias de datos ni pila**. También se ejecutó el binario sin instrumentación mediante la interfaz gráfica. Se encontró **un error menor de texto**. La matriz principal tiene **26 aprobados, 1 fallido y 2 pendientes**; “aprobado” se limita al procedimiento y estados realmente probados.
+**59/59 casos controlados pasaron en DOSBox**, además de un barrido de **65.536 combinaciones x,y sin discrepancias de datos ni pila**. También se ejecutó el binario sin instrumentación mediante la interfaz gráfica. Se encontró **un error menor de texto**. La matriz de aquella ejecución conserva **26 aprobados, 1 fallido y 2 pendientes**; “aprobado” se limita al procedimiento y estados realmente probados.
 
-**El proyecto no queda completamente validado:** falta guardar y probar una compilación nueva en emu8086 y realizar una partida libre completa hasta victoria. No se confunden las pruebas aisladas con una campaña completa de integración.
+**El proyecto no queda completamente validado:** el complemento posterior registra una nueva compilación reportada por el usuario, pero el EXE local conserva el contador temporal de 100. Falta confirmar el ejecutable definitivo de 160 bloques y documentar una partida libre completa hasta victoria. No se confunden las pruebas aisladas con una campaña completa de integración.
 
-No se modificó `src/breakout.asm`, no se dividió en módulos y no se editaron documentos o evidencias existentes. No se hicieron commits, push, merges ni PR. Solo se añaden este informe y su paquete de evidencias. El trabajo se hizo sobre `dev` sin cambiar de rama.
+Durante la ejecución original Codex no modificó `src/breakout.asm`, no lo dividió en módulos y no se editaron documentos o evidencias existentes. No se hicieron commits, push, merges ni PR. Solo se añaden este informe y su paquete de evidencias. El trabajo se hizo sobre `dev` sin cambiar de rama.
 
 ## Entorno y procedencia
 
@@ -42,7 +42,7 @@ La Integrante 1 reportó como correctas en DOSBox las seis pruebas de interfaz s
 
 Los [documentos del Integrante 2](CONTRIBUCION_INTEGRANTE_2.md) y [del Integrante 3](CONTRIBUCION_INTEGRANTE_3.md), y las capturas del Integrante 3, son antecedentes conservados. Sus resultados no se contabilizan como nuevas aprobaciones. La matriz siguiente describe las comprobaciones realizadas ahora.
 
-## Matriz de resultados
+## Matriz histórica de resultados de la ejecución original
 
 Evidencia técnica completa: [VALIDACION_FINAL_evidencias.zip](VALIDACION_FINAL_evidencias.zip). “Caso NN” identifica `resultados.json` y `pantalla-NN.txt` dentro del paquete. Las capturas citadas están en `capturas/`; el manifiesto conserva sus fechas en UTC−06:00 y sus hashes. Los nombres 10 y 13 se corrigieron en el paquete para reflejar que esas imágenes muestran derrota, no retorno al menú.
 
@@ -78,11 +78,39 @@ Evidencia técnica completa: [VALIDACION_FINAL_evidencias.zip](VALIDACION_FINAL_
 | C01 | Nueva compilación emu8086 | Abrir copia idéntica y pulsar Compile | Guardar nuevo EXE y ejecutar ese artefacto | Llegó al diálogo de guardado; el control de foco falló y no se confirmó un EXE nuevo. Se probó BASE.exe existente cotejado | ejecución | pendiente | Descripción de entorno y procedencia.json; sin aprobación de compilación nueva |
 | V01 | Partida completa integrada hasta victoria | Jugar de inicio a victoria sin alterar estados | Confirmar todo el recorrido y presentación final en uso real | No realizada; victoria únicamente en banco controlado | ejecución | pendiente | Plan manual mínimo; caso 34 no sustituye esta prueba |
 
+## Validación complementaria del equipo — 2 de noviembre de 2026
+
+### Reporte recibido y alcance
+
+El usuario comunica que corrigió “volder” por “volver”, recompiló en emu8086, obtuvo una captura de victoria con una configuración temporal descrita como 100 bloques activos y, después, restauró 160 y recompiló. Se registra como **reporte del equipo**, no como ejecución independiente de Codex. La prueba de victoria es controlada y no equivale a una partida normal de 160 bloques.
+
+La captura nueva se menciona en el reporte, pero no se adjuntó ni se identificó una ruta nueva en este complemento. No se ha inspeccionado esa imagen ni se atribuyen a ella valores de marcador no comunicados. Las evidencias del ZIP anterior permanecen intactas y corresponden a la ejecución original.
+
+### Contraste con los archivos locales
+
+- Fuente actual en `dev`: commit `97b7f9d6d99d74cc12a9b9fd5b2339dfce8fd1bf`. Tiene “volver”, `bloques DB 160 DUP(1)`, `MOV CX, 160` en el reinicio y `MOV bloques_restantes, 160`. **La restauración del fuente sí queda comprobada mediante análisis estático.**
+- SHA-256 actual de `src/breakout.asm`: `741ceff9113f11814467f3f78d3ef27c679d582b4a64ada7dd8b79725a78bdab`. Difiere del hash histórico por la corrección posterior del equipo; Codex no modificó ese archivo.
+- `pruebas/base/BASE.exe.~asm` difiere del fuente actual en una instrucción: conserva `MOV bloques_restantes, 100`. El listado del compilador muestra `C7 06 AA 00 64 00` en LOC 0984h.
+- El EXE confirma esos mismos bytes en el offset de archivo **0B84h** (offset de código 0404h): `64 00` es el inmediato 100. Con 160 el inmediato sería `A0 00`. Su SHA-256 es `fb5a0dc382adb5eb698b570afacec2177c7d223fdaad529b7e9d226dcd6229a2`; tamaño 3.796 bytes.
+- El código de ese EXE difiere del ejecutable histórico en un único byte: el inmediato del contador pasó de A0h a 64h. Por tanto, no puede considerarse comprobado como ejecutable definitivo restaurado a 160.
+- En la copia compilada siguen declarándose 160 entradas activas y el bucle de reinicio recorre 160; **el cambio observable afecta al contador a 100, no a una matriz reducida a 100 entradas activas**. Esa condición puede disparar la victoria después de 100 eliminaciones, aunque queden 60 entradas activas. Esto explica la condición controlada sin convertirla en una victoria normal del tablero completo.
+
+Estas observaciones no niegan que exista otra compilación restaurada en una ruta distinta; esa ruta no está identificada aquí. Se conservan los archivos tal como se encontraron.
+
+| ID | Funcionalidad evaluada | Procedimiento utilizado | Resultado esperado | Resultado obtenido | Tipo de verificación | Estado | Evidencia disponible |
+|---|---|---|---|---|---|---|---|
+| C01 (complemento) | Compilación definitiva restaurada | Reporte del usuario; comparar fuente, copia del compilador y bytes EXE | Artefacto compilado con contador 160 | Recompilación reportada; BASE.exe local conserva 100 | reporte previo y análisis estático del artefacto | pendiente | BASE.exe.~asm, listado, bytes y hashes arriba |
+| V02 | Presentación de victoria bajo condición temporal | Prueba controlada comunicada por el usuario | Mostrar pantalla de victoria | Pantalla y captura obtenidas según el usuario; imagen no examinada por Codex | reporte previo | aprobado | Reporte del usuario de 2/11/2026; captura mencionada sin ruta identificada |
+| R01 | Restauración de la versión definitiva | Leer inicialización del fuente y contrastar el EXE local | Fuente y ejecutable con contador 160 | Fuente restaurado; EXE local todavía con 100 | análisis estático | pendiente | Fuente, diferencia con BASE.exe.~asm e inmediato 64 00 en el EXE |
+| V01 | Partida normal completa hasta victoria | Revisión del alcance de las pruebas comunicadas | Ganar con 160 bloques sin cambios temporales | Sigue sin documentarse; la prueba de 100 no la sustituye | reporte previo | pendiente | Declaración explícita del usuario |
+
+La aprobación V02 expresa un resultado **reportado por el equipo**; no se suma a los 59 casos automatizados ni a las ejecuciones independientes anteriores. Los estados de este complemento prevalecen para C01/R01/V01; la matriz anterior conserva la trazabilidad de lo observado antes de la corrección.
+
 ## Errores y observaciones
 
 ### D01 — Error ortográfico visible (menor)
 
-La pantalla de instrucciones presenta **“volder al menu”**. Se verificó en DOSBox sin instrumentación y en la lectura B800h del caso 49. La causa está en la cadena `inst_linea4` de `.DATA`. Recomendación: corregirla a “volver al menu” en una tarea posterior autorizada y volver a compilar. No se aplicó la corrección.
+La ejecución original mostró **“volder al menu”**, en DOSBox y en la lectura B800h del caso 49. La causa estaba en `inst_linea4` de `.DATA`. **Corrección posterior confirmada en el fuente local:** el commit `97b7f9d6d99d74cc12a9b9fd5b2339dfce8fd1bf` sustituye “volder” por “volver”; la diferencia de fuente entre ambos commits se limita a esa cadena. El usuario reporta recompilación. Codex no volvió a ejecutar la pantalla corregida. El fallo de la matriz se conserva como resultado histórico anterior a la corrección.
 
 ### Aspectos de diseño que requieren criterio del equipo
 
@@ -97,9 +125,9 @@ La pantalla de instrucciones presenta **“volder al menu”**. Se verificó en 
 
 `MOVER_PELOTA` solo rebota en la barra cuando baja; discrimina las dos mitades. El marcador borra un espacio tras el número de bloques y el reinicio limpia la pantalla. El valor máximo normal de puntos es 1600, dentro de una palabra de 16 bits. Las rutinas examinadas preservan los registros declarados y equilibran PUSH/POP; el barrido verificó SP para las llamadas de colisión. Estas son conclusiones estáticas complementadas por los casos indicados, no nuevas pruebas manuales aprobadas.
 
-## Intervención manual mínima pendiente
+## Intervención manual mínima pendiente (actualizada)
 
-1. **C01:** abrir `src/breakout.asm` en emu8086, compilar y guardar un EXE con nombre nuevo fuera de los archivos del equipo. Registrar versión, resultado y hash; ejecutar ese nuevo EXE en DOSBox. Repetir al menos menú, reinicio, pausa y resultado final sobre él. No reemplazar el ejecutable existente sin autorización.
+1. **C01 / R01:** el usuario reporta recompilación después de restaurar 160 bloques, pero el `BASE.exe` local y sus auxiliares conservan `MOV bloques_restantes, 100`. Confirmar si el EXE definitivo se guardó en otra ruta o compilar el fuente restaurado y guardarlo con un nombre nuevo. Cotejar fuente/auxiliares/binario y ejecutar esa versión comprobando B:160 al iniciar. Registrar ruta y hash; no reemplazar archivos del equipo sin autorización.
 2. **V01:** realizar una partida completa hasta victoria con el ejecutable sin instrumentación, guardar la pantalla final de 1600 puntos/0 bloques, volver con Enter e iniciar otra partida comprobando el récord. El caso controlado ya validó la eliminación de las 160 entradas y la salida GANASTE, por lo que no hace falta repetir manualmente cada coordenada de bloque.
 
 Como comprobación de usabilidad adicional, se recomienda mantener pulsadas A/D y flechas, alternarlas rápidamente y pausar cerca de una colisión. Los casos existentes cubren pulsaciones y saturación de límites, pero no todas las condiciones de repetición del teclado físico. No se presenta esta recomendación como un fallo observado.
@@ -112,8 +140,10 @@ Para repetir en este mismo equipo, extraer el paquete en una carpeta de pruebas,
 
 Las capturas 05 y 06 están separadas por aproximadamente 4,6 segundos y muestran la pausa sin desplazamiento; 07 muestra la reanudación. La captura 10 muestra la primera derrota natural, 11 el menú con récord 150, 12 el reinicio a 0/160/3 y 14 el retorno al menú con Escape durante otra partida. La salida con S se comprobó por cierre de BASE y código de salida 0 de la sesión nueva de DOSBox; la sesión de DOSBox que estaba abierta antes de la tarea se conservó.
 
-Comprobaciones de conservación: SHA-256 del fuente idéntico al inicial; `git diff` de archivos versionados vacío; `git diff --check` sin errores. No se cambió ningún archivo existente del equipo. El estado final de Git contiene únicamente este informe y su ZIP como archivos nuevos, además del archivo local sin seguimiento que ya existía.
+Comprobaciones de conservación de la ejecución original (históricas): SHA-256 del fuente idéntico al inicial; `git diff` de archivos versionados vacío; `git diff --check` sin errores. No se cambió ningún archivo existente del equipo. El estado final de Git contiene únicamente este informe y su ZIP como archivos nuevos, además del archivo local sin seguimiento que ya existía.
 
 ## Conclusión
 
-El comportamiento implementado supera las comprobaciones funcionales controladas realizadas, y la ejecución gráfica confirmó funciones principales de integración. La detección de colisiones mantuvo sus datos y pila coherentes para todo el dominio de coordenadas de byte ensayado. Se confirmó un error menor de texto. La validación sigue **parcial**, con los dos pendientes C01 y V01; no se declara el proyecto completamente validado ni se ha modificado su lógica.
+Los resultados originales siguen documentando 59 casos controlados aprobados y el barrido de 65.536 coordenadas sin discrepancias de datos o pila. El equipo corrigió el texto en el fuente y reporta recompilación y una pantalla de victoria en una prueba controlada. Esa victoria no representa una partida normal con 160 bloques.
+
+El contraste actual confirma la restauración del fuente, pero encuentra el contador temporal de 100 en `pruebas/base/BASE.exe`. Se debe identificar o producir el ejecutable definitivo restaurado antes de cerrar C01/R01. Permanece pendiente V01: documentar una partida normal completa hasta victoria con la configuración original de 160 bloques. El proyecto sigue parcialmente validado.

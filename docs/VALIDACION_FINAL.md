@@ -147,3 +147,19 @@ Comprobaciones de conservación de la ejecución original (históricas): SHA-256
 Los resultados originales siguen documentando 59 casos controlados aprobados y el barrido de 65.536 coordenadas sin discrepancias de datos o pila. El equipo corrigió el texto en el fuente y reporta recompilación y una pantalla de victoria en una prueba controlada. Esa victoria no representa una partida normal con 160 bloques.
 
 El contraste actual confirma la restauración del fuente, pero encuentra el contador temporal de 100 en `pruebas/base/BASE.exe`. Se debe identificar o producir el ejecutable definitivo restaurado antes de cerrar C01/R01. Permanece pendiente V01: documentar una partida normal completa hasta victoria con la configuración original de 160 bloques. El proyecto sigue parcialmente validado.
+
+## Complemento final — Verificación del ejecutable de entrega
+
+**Fecha:** 2 de noviembre de 2026.
+
+Posteriormente a la validación original, el equipo generó mediante emu8086 un nuevo ejecutable denominado `FINAL.EXE`, correspondiente al código fuente restaurado a su configuración original de 160 bloques.
+
+El ejecutable fue incorporado al repositorio como `entrega/BREAKOUT.EXE`, con un tamaño de 3796 bytes y la siguiente identificación SHA-256:
+
+`C3CF31B9BFC256D22D2F211E1777A0ACFCB9DC363F211A2EB3A94FED3482499D`
+
+El equipo confirmó manualmente su ejecución en DOSBox, verificando que una nueva partida comienza con 160 bloques restantes, 0 puntos y 3 vidas.
+
+En consecuencia, se considera **completada la comprobación manual de compilación y ejecución del artefacto de entrega**. Esta verificación complementa los registros históricos correspondientes al ejecutable anterior `BASE.exe`, que conservaba un contador temporal de 100.
+
+La prueba visual de victoria se realizó con una configuración temporal del contador de 100 bloques. Las pruebas automatizadas comprobaron separadamente la condición de victoria mediante la eliminación de los 160 bloques. No se documentó una partida manual completa de inicio a victoria con la configuración original.

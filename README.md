@@ -154,7 +154,7 @@ Se recomienda ajustar la velocidad hasta conseguir un movimiento adecuado de la 
 
 Los controles de letras admiten mayúsculas y minúsculas.
 
-Durante la pausa se utiliza la tecla P para reanudar.
+Durante la pausa se utiliza la tecla P para reanudar. Escape se procesa durante la partida activa; no sale de la pausa. El High Score se actualiza al terminar por victoria o derrota; abandonar con Escape no registra el puntaje de esa partida.
 
 ## 7. Compilación desde el código fuente
 
@@ -286,7 +286,7 @@ El repositorio conserva capturas de las funcionalidades desarrolladas.
 - Derrota.
 - Victoria.
 
-Las evidencias se encuentran en las carpetas correspondientes dentro de `docs/`.
+Las evidencias se encuentran en las carpetas correspondientes dentro de `docs/`. La captura histórica `docs/evidencias-integrante-3/05-victoria.png` muestra 10 puntos y no acredita la prueba posterior con contador temporal de 100; su captura específica sigue pendiente de incorporar.
 
 ## 11. Control de versiones
 
@@ -318,6 +318,8 @@ Para conservar la procedencia del código se incluyen:
 
 - `original/breakdown_original.asm`
 - `original/ORIGEN_Y_CREDITOS.md`
+
+**Condiciones de uso — revisión del 2/11/2026:** el [README del autor original](https://github.com/Benjamin-Solano/Breakout/blob/main/README.md) declara uso, modificación y análisis con fines no comerciales. No se identificó un archivo de licencia formal en su árbol revisado y GitHub no identifica una licencia. Antes de ampliar la distribución pública del código o del ejecutable derivado, queda por revisar el alcance de esa declaración y, si procede, obtener autorización del autor. No se infieren permisos adicionales ni se añade una licencia en su nombre. Véase [origen y créditos](original/ORIGEN_Y_CREDITOS.md).
 
 ## 13. Estado del proyecto
 

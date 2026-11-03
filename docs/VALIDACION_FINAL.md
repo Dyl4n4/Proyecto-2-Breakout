@@ -2,13 +2,36 @@
 
 Fecha: 2 de noviembre de 2026 (America/Costa_Rica). Curso EIF205.
 
+## Estado vigente — revisión del 2 de noviembre de 2026
+
+Este resumen incorpora el complemento final del equipo sobre el artefacto de entrega y prevalece sobre los estados pendientes de C01/R01 de las secciones históricas. Se revisó `origin/dev` en `aa5d687d23abafab957d4756bfd5454b7473f122`.
+
+| Comprobación | Estado vigente | Origen y alcance de la evidencia |
+|---|---|---|
+| C01 — compilación y ejecución del artefacto definitivo | Aprobado por comprobación manual del equipo | El equipo reporta compilación con emu8086 y ejecución de `entrega/BREAKOUT.EXE` en DOSBox. Codex no repitió esa ejecución ni la compilación en esta revisión. |
+| R01 — restauración a 160 bloques | Aprobado por comprobación manual del equipo, con contraste estático independiente | El equipo observó 160 bloques, 0 puntos y 3 vidas al iniciar. Codex comprobó fuente, hash, tamaño e inmediato del contador en el EXE definitivo. El `BASE.exe` temporal no es el artefacto de entrega. |
+| V02 — pantalla de victoria con contador temporal 100 | Resultado reportado por el equipo; evidencia específica pendiente de incorporar | El arreglo conservaba 160 entradas. La captura histórica `evidencias-integrante-3/05-victoria.png` no identifica esta prueba y no se reutiliza para acreditarla. |
+| V01 — partida manual completa con 160 bloques | Pendiente | Ni los 59 casos controlados ni la victoria con contador 100 acreditan una partida normal completa hasta victoria. |
+
+**Artefacto vigente:** [entrega/BREAKOUT.EXE](../entrega/BREAKOUT.EXE), 3.796 bytes. SHA-256 comprobado independientemente en esta revisión:
+
+`C3CF31B9BFC256D22D2F211E1777A0ACFCB9DC363F211A2EB3A94FED3482499D`
+
+La inspección estática del EXE encuentra `C7 06 AA 00 A0 00` en el offset de archivo 0B84h: inicializa `bloques_restantes` en 160. Sus 1.876 bytes de código coinciden con el ejecutable histórico utilizado en la validación original. Esto es una comparación de artefactos, no una prueba nueva de ejecución. El fuente integrado conserva 160 entradas activas, reinicio a 160, 0 puntos y 3 vidas; “volder” está corregido a “volver”.
+
+Los resultados **59/59** y el barrido de **65.536 coordenadas** siguen perteneciendo a las ejecuciones independientes originales de Codex, con los binarios y configuraciones identificados en su ZIP histórico. No se atribuyen de nuevo al EXE de entrega por el solo hecho de que su código coincida. Se conservan íntegros los registros anteriores para trazabilidad.
+
+La revisión del inventario encuentra diez capturas PNG versionadas y catorce capturas JPEG en el ZIP histórico. `evidencias-integrante-3/05-victoria.png` se incorporó en el commit `67e4fe2` del 20/10/2026 y muestra GANASTE con 10 puntos y récord 10: no es evidencia inequívoca de la prueba posterior con contador 100. Las capturas JPEG del ZIP tampoco documentan esa prueba posterior. Se debe incorporar la captura específica con su procedencia; V02 no cambia por ello a ejecución independiente de Codex.
+
+**Pendientes de entrega:** incorporar el informe técnico final elaborado por otro integrante en LaTeX (y su PDF para lectura), incorporar la evidencia específica de V02 y mantener V01 como pendiente hasta documentarla. El repositorio sigue parcialmente validado; no debe describirse como completamente validado.
+
 ## Resultado y alcance de la ejecución original
 
 La versión de la ejecución original fue `dev`, commit `738b1a6797e48f15827c59fcf6aa6b5e4519cd9e`, igual a `origin/dev` tras `git fetch origin`. Se conservó el archivo local sin seguimiento `pruebas/base/BASE.exe_BKP17636` y los ejecutables/auxiliares ignorados. No había cambios en archivos versionados al comenzar.
 
 **59/59 casos controlados pasaron en DOSBox**, además de un barrido de **65.536 combinaciones x,y sin discrepancias de datos ni pila**. También se ejecutó el binario sin instrumentación mediante la interfaz gráfica. Se encontró **un error menor de texto**. La matriz de aquella ejecución conserva **26 aprobados, 1 fallido y 2 pendientes**; “aprobado” se limita al procedimiento y estados realmente probados.
 
-**El proyecto no queda completamente validado:** el complemento posterior registra una nueva compilación reportada por el usuario, pero el EXE local conserva el contador temporal de 100. Falta confirmar el ejecutable definitivo de 160 bloques y documentar una partida libre completa hasta victoria. No se confunden las pruebas aisladas con una campaña completa de integración.
+**Al cerrar aquella revisión**, el `BASE.exe` local conservaba el contador temporal de 100 y se dejó pendiente confirmar el ejecutable definitivo de 160 bloques y documentar una partida libre completa hasta victoria. C01/R01 se resolvieron posteriormente para `entrega/BREAKOUT.EXE`, según el resumen vigente; V01 continúa pendiente. No se confunden las pruebas aisladas con una campaña completa de integración.
 
 Durante la ejecución original Codex no modificó `src/breakout.asm`, no lo dividió en módulos y no se editaron documentos o evidencias existentes. No se hicieron commits, push, merges ni PR. Solo se añaden este informe y su paquete de evidencias. El trabajo se hizo sobre `dev` sin cambiar de rama.
 
@@ -86,7 +109,7 @@ El usuario comunica que corrigió “volder” por “volver”, recompiló en e
 
 La captura nueva se menciona en el reporte, pero no se adjuntó ni se identificó una ruta nueva en este complemento. No se ha inspeccionado esa imagen ni se atribuyen a ella valores de marcador no comunicados. Las evidencias del ZIP anterior permanecen intactas y corresponden a la ejecución original.
 
-### Contraste con los archivos locales
+### Contraste histórico con los archivos locales (anterior al artefacto de entrega)
 
 - Fuente actual en `dev`: commit `97b7f9d6d99d74cc12a9b9fd5b2339dfce8fd1bf`. Tiene “volver”, `bloques DB 160 DUP(1)`, `MOV CX, 160` en el reinicio y `MOV bloques_restantes, 160`. **La restauración del fuente sí queda comprobada mediante análisis estático.**
 - SHA-256 actual de `src/breakout.asm`: `741ceff9113f11814467f3f78d3ef27c679d582b4a64ada7dd8b79725a78bdab`. Difiere del hash histórico por la corrección posterior del equipo; Codex no modificó ese archivo.
@@ -104,7 +127,7 @@ Estas observaciones no niegan que exista otra compilación restaurada en una rut
 | R01 | Restauración de la versión definitiva | Leer inicialización del fuente y contrastar el EXE local | Fuente y ejecutable con contador 160 | Fuente restaurado; EXE local todavía con 100 | análisis estático | pendiente | Fuente, diferencia con BASE.exe.~asm e inmediato 64 00 en el EXE |
 | V01 | Partida normal completa hasta victoria | Revisión del alcance de las pruebas comunicadas | Ganar con 160 bloques sin cambios temporales | Sigue sin documentarse; la prueba de 100 no la sustituye | reporte previo | pendiente | Declaración explícita del usuario |
 
-La aprobación V02 expresa un resultado **reportado por el equipo**; no se suma a los 59 casos automatizados ni a las ejecuciones independientes anteriores. Los estados de este complemento prevalecen para C01/R01/V01; la matriz anterior conserva la trazabilidad de lo observado antes de la corrección.
+La aprobación V02 expresa un resultado **reportado por el equipo**; no se suma a los 59 casos automatizados ni a las ejecuciones independientes anteriores. Los estados de este complemento corresponden a esa revisión del BASE.exe; el resumen vigente al inicio recoge la resolución posterior de C01/R01 para BREAKOUT.EXE y mantiene V01 pendiente. La matriz anterior conserva la trazabilidad de lo observado antes de la corrección.
 
 ## Errores y observaciones
 
@@ -125,7 +148,9 @@ La ejecución original mostró **“volder al menu”**, en DOSBox y en la lectu
 
 `MOVER_PELOTA` solo rebota en la barra cuando baja; discrimina las dos mitades. El marcador borra un espacio tras el número de bloques y el reinicio limpia la pantalla. El valor máximo normal de puntos es 1600, dentro de una palabra de 16 bits. Las rutinas examinadas preservan los registros declarados y equilibran PUSH/POP; el barrido verificó SP para las llamadas de colisión. Estas son conclusiones estáticas complementadas por los casos indicados, no nuevas pruebas manuales aprobadas.
 
-## Intervención manual mínima pendiente (actualizada)
+## Intervención manual registrada antes del ejecutable de entrega
+
+Esta lista se conserva como antecedente: C01/R01 ya se completaron por comprobación manual del equipo para BREAKOUT.EXE; V01 sigue pendiente.
 
 1. **C01 / R01:** el usuario reporta recompilación después de restaurar 160 bloques, pero el `BASE.exe` local y sus auxiliares conservan `MOV bloques_restantes, 100`. Confirmar si el EXE definitivo se guardó en otra ruta o compilar el fuente restaurado y guardarlo con un nombre nuevo. Cotejar fuente/auxiliares/binario y ejecutar esa versión comprobando B:160 al iniciar. Registrar ruta y hash; no reemplazar archivos del equipo sin autorización.
 2. **V01:** realizar una partida completa hasta victoria con el ejecutable sin instrumentación, guardar la pantalla final de 1600 puntos/0 bloques, volver con Enter e iniciar otra partida comprobando el récord. El caso controlado ya validó la eliminación de las 160 entradas y la salida GANASTE, por lo que no hace falta repetir manualmente cada coordenada de bloque.
@@ -142,7 +167,7 @@ Las capturas 05 y 06 están separadas por aproximadamente 4,6 segundos y muestra
 
 Comprobaciones de conservación de la ejecución original (históricas): SHA-256 del fuente idéntico al inicial; `git diff` de archivos versionados vacío; `git diff --check` sin errores. No se cambió ningún archivo existente del equipo. El estado final de Git contiene únicamente este informe y su ZIP como archivos nuevos, además del archivo local sin seguimiento que ya existía.
 
-## Conclusión
+## Conclusión histórica de la revisión de BASE.exe
 
 Los resultados originales siguen documentando 59 casos controlados aprobados y el barrido de 65.536 coordenadas sin discrepancias de datos o pila. El equipo corrigió el texto en el fuente y reporta recompilación y una pantalla de victoria en una prueba controlada. Esa victoria no representa una partida normal con 160 bloques.
 
@@ -163,3 +188,7 @@ El equipo confirmó manualmente su ejecución en DOSBox, verificando que una nue
 En consecuencia, se considera **completada la comprobación manual de compilación y ejecución del artefacto de entrega**. Esta verificación complementa los registros históricos correspondientes al ejecutable anterior `BASE.exe`, que conservaba un contador temporal de 100.
 
 La prueba visual de victoria se realizó con una configuración temporal del contador de 100 bloques. Las pruebas automatizadas comprobaron separadamente la condición de victoria mediante la eliminación de los 160 bloques. No se documentó una partida manual completa de inicio a victoria con la configuración original.
+
+## Conclusión vigente
+
+El ejecutable de entrega está identificado y versionado; C01/R01 están completados según la comprobación manual del equipo, complementada con la inspección estática independiente del artefacto. Los hallazgos del BASE.exe temporal se mantienen como antecedentes y no describen BREAKOUT.EXE. V01 sigue pendiente y falta incorporar la captura inequívoca de V02. La incorporación del informe técnico final en LaTeX y su revisión deben preceder a la integración final hacia main.

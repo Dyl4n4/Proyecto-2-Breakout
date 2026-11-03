@@ -1,5 +1,11 @@
 # Contribución del Integrante 1: Interfaz y controles
 
+## Nota de actualización — 2 de noviembre de 2026
+
+Los aportes de los tres integrantes ya están integrados en `dev`. Las referencias a integración futura, instrucciones de trabajo y resultados individuales de este documento se conservan como historial de su etapa de desarrollo. El estado vigente, las comprobaciones independientes de Codex, las verificaciones manuales reportadas por el equipo y los pendientes se distinguen en [VALIDACION_FINAL.md](VALIDACION_FINAL.md).
+
+La compilación definitiva se encuentra en `entrega/BREAKOUT.EXE`; el equipo confirmó su inicio con 160 bloques, 0 puntos y 3 vidas. Sigue pendiente documentar una partida manual completa hasta victoria con 160 bloques. Esta nota no atribuye nuevas pruebas individuales a este integrante ni convierte sus registros históricos en resultados nuevos.
+
 ## 1. Objetivo
 
 Desarrollar y mejorar la interfaz visual y los controles del videojuego Breakout implementado en lenguaje ensamblador Intel 8086, conservando su funcionalidad original y utilizando DOSBox como entorno de ejecución.

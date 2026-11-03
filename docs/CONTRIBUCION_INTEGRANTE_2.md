@@ -1,5 +1,11 @@
 # Contribución del Integrante 2 — Física y colisiones
 
+## Nota de actualización — 2 de noviembre de 2026
+
+Los aportes de los tres integrantes ya están integrados en `dev`. Las referencias a integración futura, instrucciones de trabajo y resultados individuales de este documento se conservan como historial de su etapa de desarrollo. El estado vigente, las comprobaciones independientes de Codex, las verificaciones manuales reportadas por el equipo y los pendientes se distinguen en [VALIDACION_FINAL.md](VALIDACION_FINAL.md).
+
+La compilación definitiva se encuentra en `entrega/BREAKOUT.EXE`; el equipo confirmó su inicio con 160 bloques, 0 puntos y 3 vidas. Sigue pendiente documentar una partida manual completa hasta victoria con 160 bloques. Esta nota no atribuye nuevas pruebas individuales a este integrante ni convierte sus registros históricos en resultados nuevos.
+
 **Proyecto:** Breakout EIF205, emu8086 (8086, modo texto 80×25).  
 **Rama de trabajo:** `feature/fisica-colisiones`.  
 **Archivo de producción modificado:** `src/breakout.asm`.  
